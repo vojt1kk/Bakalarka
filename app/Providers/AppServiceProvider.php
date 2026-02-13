@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Support\Macros\Testing\AssertApiStructure;
+use App\Support\Macros\Testing\AssertPaginatedApiCount;
+use App\Support\Macros\Testing\AssertPaginatedApiStructure;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Testing\TestResponse;
 use Illuminate\Validation\Rules\Password;
 
 class AppServiceProvider extends ServiceProvider
@@ -26,6 +30,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+        $this->configureTesting();
     }
 
     /**
@@ -48,5 +53,12 @@ class AppServiceProvider extends ServiceProvider
                 ->uncompromised()
             : null
         );
+    }
+
+    private function configureTesting(): void
+    {
+        TestResponse::macro('assertApiStructure', (new AssertApiStructure)());
+        TestResponse::macro('assertPaginatedApiStructure', (new AssertPaginatedApiStructure)());
+        TestResponse::macro('assertPaginatedApiCount', (new AssertPaginatedApiCount)());
     }
 }
