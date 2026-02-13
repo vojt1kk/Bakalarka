@@ -1,0 +1,21 @@
+includes:
+	- phpstan-baseline.neon
+	- vendor/larastan/larastan/extension.neon
+
+parameters:
+	tmpDir: .phpstan-cache
+	level: 5
+
+	paths:
+		- app
+		- config
+		- bootstrap
+		- database
+
+	excludePaths:
+		- tests
+
+	ignoreErrors:
+	    -
+	        message: '#Access to constant .* on an unknown class Pdo\\Mysql#'
+	        path: config/database.php
