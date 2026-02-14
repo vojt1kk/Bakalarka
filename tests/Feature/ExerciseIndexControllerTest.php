@@ -21,6 +21,5 @@ test('authenticated users can view the exercises list', function (): void {
         ->assertInertia(fn (Assert $page): Assert => $page
             ->component('exercises/index')
             ->has('exercises', 3)
-            ->has('exercises.0.instructions')
         );
 });

@@ -18,8 +18,8 @@ Route::get('exercises', App\Http\Controllers\ExerciseIndexController::class)
     ->middleware(['auth', 'verified'])
     ->name('exercises');
 
-Route::get('exercises/{exercise}/coach', App\Http\Controllers\ExerciseCoachController::class)
+Route::get('exercises/{exercise}', App\Http\Controllers\ExerciseShowController::class)
     ->middleware(['auth', 'verified'])
-    ->name('exercises.coach');
+    ->name('exercises.detail');
 
 require __DIR__ . '/settings.php';
