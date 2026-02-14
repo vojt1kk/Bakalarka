@@ -26,7 +26,7 @@ test('dashboard displays exercise count', function (): void {
     $response = $this->actingAs($user)->get(route('dashboard'));
 
     $response->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->component('dashboard')
             ->where('exerciseCount', 5)
         );

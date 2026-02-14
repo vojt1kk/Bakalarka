@@ -47,7 +47,7 @@ final readonly class GenerateExerciseFeedbackAction
         $text = trim((string) $text);
         $text = preg_replace('/^```(?:json)?\s*|\s*```$/s', '', $text);
 
-        $parsed = json_decode($text, true, 512, JSON_THROW_ON_ERROR);
+        $parsed = json_decode((string) $text, true, 512, JSON_THROW_ON_ERROR);
 
         return CoachingFeedbackData::fromArray($parsed);
     }

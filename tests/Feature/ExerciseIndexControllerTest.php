@@ -18,7 +18,7 @@ test('authenticated users can view the exercises list', function (): void {
     $response = $this->actingAs($user)->get(route('exercises'));
 
     $response->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->component('exercises/index')
             ->has('exercises', 3)
             ->has('exercises.0.instructions')
