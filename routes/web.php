@@ -12,6 +12,10 @@ Route::get('/', fn () => Inertia::render('welcome', [
 
 Route::get('dashboard', fn () => Inertia::render('dashboard'))->middleware(['auth', 'verified'])->name('dashboard');
 
+Route::get('exercises', App\Http\Controllers\ExerciseIndexController::class)
+    ->middleware(['auth', 'verified'])
+    ->name('exercises');
+
 Route::get('exercises/{exercise}/coach', App\Http\Controllers\ExerciseCoachController::class)
     ->middleware(['auth', 'verified'])
     ->name('exercises.coach');
