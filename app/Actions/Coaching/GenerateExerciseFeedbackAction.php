@@ -44,7 +44,10 @@ final readonly class GenerateExerciseFeedbackAction
             throw new RuntimeException('Gemini API returned an unexpected response structure.');
         }
 
-        $parsed = json_decode((string) $text, true, 512, JSON_THROW_ON_ERROR);
+        $text = trim((string) $text);
+        $text = preg_replace('/^```(?:json)?\s*|\s*```$/s', '', $text);
+
+        $parsed = json_decode($text, true, 512, JSON_THROW_ON_ERROR);
 
         return CoachingFeedbackData::fromArray($parsed);
     }

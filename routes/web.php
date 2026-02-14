@@ -12,4 +12,8 @@ Route::get('/', fn () => Inertia::render('welcome', [
 
 Route::get('dashboard', fn () => Inertia::render('dashboard'))->middleware(['auth', 'verified'])->name('dashboard');
 
+Route::get('exercises/{exercise}/coach', App\Http\Controllers\ExerciseCoachController::class)
+    ->middleware(['auth', 'verified'])
+    ->name('exercises.coach');
+
 require __DIR__ . '/settings.php';
