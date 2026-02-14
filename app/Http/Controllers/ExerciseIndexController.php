@@ -21,6 +21,7 @@ final class ExerciseIndexController extends Controller
                     Exercise::ATTR_PPL_TYPE,
                     Exercise::ATTR_UL_TYPE,
                     Exercise::ATTR_MUSCLE_TYPES,
+                    Exercise::ATTR_INSTRUCTIONS,
                 ])
                 ->get(),
         ]);

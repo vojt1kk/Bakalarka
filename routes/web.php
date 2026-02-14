@@ -10,7 +10,9 @@ Route::get('/', fn () => Inertia::render('welcome', [
     'canRegister' => Features::enabled(Features::registration()),
 ]))->name('home');
 
-Route::get('dashboard', fn () => Inertia::render('dashboard'))->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('dashboard', fn () => Inertia::render('dashboard', [
+    'exerciseCount' => App\Models\Exercise::query()->count(),
+]))->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::get('exercises', App\Http\Controllers\ExerciseIndexController::class)
     ->middleware(['auth', 'verified'])
