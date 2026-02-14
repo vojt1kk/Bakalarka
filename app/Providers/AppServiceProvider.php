@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Http\Integrations\Gemini\GeminiConnector;
 use App\Support\Macros\Testing\AssertApiStructure;
 use App\Support\Macros\Testing\AssertPaginatedApiCount;
 use App\Support\Macros\Testing\AssertPaginatedApiStructure;
@@ -21,7 +22,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(GeminiConnector::class);
     }
 
     /**
