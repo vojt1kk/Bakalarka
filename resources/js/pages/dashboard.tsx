@@ -22,8 +22,7 @@ export default function Dashboard({ exerciseCount }: { exerciseCount: number }) 
             <div className="flex flex-col gap-8 p-4 pb-8">
                 {/* Hero Section */}
                 <section className="relative overflow-hidden rounded-2xl border border-border bg-card">
-                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,hsl(142_71%_45%/0.08),transparent_60%)]" />
-                    <div className="relative flex flex-col gap-6 p-6 sm:p-10 lg:p-12">
+                    <div className="relative flex flex-col gap-6 p-4 sm:p-10">
                         <div className="flex items-center gap-2">
                             <Badge variant="outline" className="border-primary/30 bg-primary/10 text-primary">
                                 <Zap className="mr-1 h-3 w-3" />
@@ -42,13 +41,13 @@ export default function Dashboard({ exerciseCount }: { exerciseCount: number }) 
                             </p>
                         </div>
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                            <Button asChild size="lg" className="font-semibold">
+                            <Button asChild size="lg" className="w-full font-semibold sm:w-auto">
                                 <Link href={exercises().url}>
                                     Start Training
                                     <ArrowRight className="ml-1 h-4 w-4" />
                                 </Link>
                             </Button>
-                            <Button asChild variant="outline" size="lg">
+                            <Button asChild variant="outline" size="lg" className="w-full sm:w-auto">
                                 <Link href={exercises().url}>Browse Exercises</Link>
                             </Button>
                         </div>
@@ -63,8 +62,8 @@ export default function Dashboard({ exerciseCount }: { exerciseCount: number }) 
                     </div>
 
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                        <Card className="group relative overflow-hidden transition-all duration-200 hover:border-primary/30 hover:shadow-md">
-                            <div className="absolute right-0 top-0 h-24 w-24 translate-x-6 -translate-y-6 rounded-full bg-primary/5 transition-transform duration-300 group-hover:scale-150" />
+                        <Card className="relative overflow-hidden">
+                            <div className="absolute right-0 top-0 h-24 w-24 translate-x-6 -translate-y-6 rounded-full bg-primary/5 " />
                             <CardHeader className="flex flex-row items-center justify-between pb-2">
                                 <CardTitle className="text-sm font-medium text-muted-foreground">
                                     Available Exercises
@@ -82,8 +81,8 @@ export default function Dashboard({ exerciseCount }: { exerciseCount: number }) 
                             </CardContent>
                         </Card>
 
-                        <Card className="group relative overflow-hidden transition-all duration-200 hover:border-primary/30 hover:shadow-md">
-                            <div className="absolute right-0 top-0 h-24 w-24 translate-x-6 -translate-y-6 rounded-full bg-accent/50 transition-transform duration-300 group-hover:scale-150" />
+                        <Card className="relative overflow-hidden">
+                            <div className="absolute right-0 top-0 h-24 w-24 translate-x-6 -translate-y-6 rounded-full bg-accent/50 " />
                             <CardHeader className="flex flex-row items-center justify-between pb-2">
                                 <CardTitle className="text-sm font-medium text-muted-foreground">
                                     Last Activity
@@ -100,8 +99,8 @@ export default function Dashboard({ exerciseCount }: { exerciseCount: number }) 
                             </CardContent>
                         </Card>
 
-                        <Card className="group relative overflow-hidden transition-all duration-200 hover:border-primary/30 hover:shadow-md">
-                            <div className="absolute right-0 top-0 h-24 w-24 translate-x-6 -translate-y-6 rounded-full bg-accent/50 transition-transform duration-300 group-hover:scale-150" />
+                        <Card className="relative overflow-hidden">
+                            <div className="absolute right-0 top-0 h-24 w-24 translate-x-6 -translate-y-6 rounded-full bg-accent/50 " />
                             <CardHeader className="flex flex-row items-center justify-between pb-2">
                                 <CardTitle className="text-sm font-medium text-muted-foreground">
                                     Total Workouts

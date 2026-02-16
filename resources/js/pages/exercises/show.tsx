@@ -71,7 +71,7 @@ export default function ExerciseShow({
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={exercise.name} />
 
-            <div className="flex flex-col gap-8 p-4 pb-8">
+            <div className="flex flex-col gap-4 p-4 pb-8">
                 {/* Exercise Header */}
                 <section className="flex flex-col gap-3">
                     <div className="flex flex-wrap items-center gap-2">
@@ -97,98 +97,92 @@ export default function ExerciseShow({
                     <p className="max-w-2xl text-base leading-relaxed text-muted-foreground">{exercise.description}</p>
                 </section>
 
-                {/* Content Grid */}
-                <div className="grid grid-cols-1 gap-8 lg:grid-cols-5">
-                    {/* Left Column: Video + Instructions */}
-                    <div className="flex flex-col gap-6 lg:col-span-3">
-                        {exercise.video_path && (
-                            <Card className="overflow-hidden">
-                                <CardHeader className="pb-3">
-                                    <div className="flex items-center gap-2">
-                                        <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10">
-                                            <Play className="h-3.5 w-3.5 text-primary" />
-                                        </div>
-                                        <CardTitle className="text-base font-semibold">Reference Video</CardTitle>
-                                    </div>
-                                    <CardDescription>
-                                        Watch the proper form before starting your session.
-                                    </CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="overflow-hidden rounded-lg border border-border bg-muted/30">
-                                        <div className="aspect-video">
-                                            <video
-                                                src={exercise.video_path}
-                                                controls
-                                                className="h-full w-full object-cover"
-                                                preload="metadata"
-                                            />
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        )}
+                {/* Workout Mode */}
+                <Card className="overflow-hidden border-primary/20 bg-card">
+                    <CardHeader className="border-b border-border bg-primary/5 pb-4">
+                        <div className="flex items-center gap-2">
+                            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10">
+                                <Camera className="h-3.5 w-3.5 text-primary" />
+                            </div>
+                            <div className="flex flex-col gap-0.5">
+                                <CardTitle className="text-base font-semibold">Workout Mode</CardTitle>
+                                <CardDescription className="text-xs">
+                                    AI-powered form analysis
+                                </CardDescription>
+                            </div>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="flex flex-col gap-4 p-4">
+                        <WebcamView
+                            videoRef={videoRef}
+                            canvasRef={canvasRef}
+                            landmarks={landmarks}
+                            deviations={deviations}
+                            isLoading={isLoading}
+                            isRunning={isRunning}
+                            error={poseError}
+                            onStart={start}
+                            onStop={handleStop}
+                        />
+                        <FeedbackPanel
+                            feedback={feedback}
+                            isLoading={feedbackLoading}
+                            repCount={repCount}
+                            currentPhase={currentPhase}
+                            error={feedbackError}
+                        />
+                    </CardContent>
+                </Card>
 
-                        {exercise.instructions && (
-                            <Card>
-                                <CardHeader className="pb-3">
-                                    <div className="flex items-center gap-2">
-                                        <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10">
-                                            <BookOpen className="h-3.5 w-3.5 text-primary" />
-                                        </div>
-                                        <CardTitle className="text-base font-semibold">Instructions</CardTitle>
-                                    </div>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="rounded-lg border-l-2 border-primary/30 bg-muted/30 px-5 py-4">
-                                        <p className="whitespace-pre-line text-sm leading-relaxed text-foreground">
-                                            {exercise.instructions}
-                                        </p>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        )}
-                    </div>
-
-                    {/* Right Column: Camera Feedback */}
-                    <div className="flex flex-col gap-6 lg:col-span-2">
-                        <Card className="overflow-hidden border-primary/20 bg-card">
-                            <CardHeader className="border-b border-border bg-primary/5 pb-4">
-                                <div className="flex items-center gap-2">
-                                    <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10">
-                                        <Camera className="h-3.5 w-3.5 text-primary" />
-                                    </div>
-                                    <div className="flex flex-col gap-0.5">
-                                        <CardTitle className="text-base font-semibold">Workout Mode</CardTitle>
-                                        <CardDescription className="text-xs">
-                                            AI-powered form analysis
-                                        </CardDescription>
-                                    </div>
+                {/* Reference Video */}
+                {exercise.video_path && (
+                    <Card className="overflow-hidden">
+                        <CardHeader className="pb-3">
+                            <div className="flex items-center gap-2">
+                                <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10">
+                                    <Play className="h-3.5 w-3.5 text-primary" />
                                 </div>
-                            </CardHeader>
-                            <CardContent className="flex flex-col gap-4 p-4">
-                                <WebcamView
-                                    videoRef={videoRef}
-                                    canvasRef={canvasRef}
-                                    landmarks={landmarks}
-                                    deviations={deviations}
-                                    isLoading={isLoading}
-                                    isRunning={isRunning}
-                                    error={poseError}
-                                    onStart={start}
-                                    onStop={handleStop}
-                                />
-                                <FeedbackPanel
-                                    feedback={feedback}
-                                    isLoading={feedbackLoading}
-                                    repCount={repCount}
-                                    currentPhase={currentPhase}
-                                    error={feedbackError}
-                                />
-                            </CardContent>
-                        </Card>
-                    </div>
-                </div>
+                                <CardTitle className="text-base font-semibold">Reference Video</CardTitle>
+                            </div>
+                            <CardDescription>
+                                Watch the proper form before starting your session.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="overflow-hidden rounded-lg border border-border bg-muted/30">
+                                <div className="aspect-video">
+                                    <video
+                                        src={exercise.video_path}
+                                        controls
+                                        className="h-full w-full object-cover"
+                                        preload="metadata"
+                                    />
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
+
+                {/* Instructions */}
+                {exercise.instructions && (
+                    <Card>
+                        <CardHeader className="pb-3">
+                            <div className="flex items-center gap-2">
+                                <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10">
+                                    <BookOpen className="h-3.5 w-3.5 text-primary" />
+                                </div>
+                                <CardTitle className="text-base font-semibold">Instructions</CardTitle>
+                            </div>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="rounded-lg border-l-2 border-primary/30 bg-muted/30 px-5 py-4">
+                                <p className="whitespace-pre-line text-sm leading-relaxed text-foreground">
+                                    {exercise.instructions}
+                                </p>
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
             </div>
         </AppLayout>
     );

@@ -1,5 +1,6 @@
 import { Link } from '@inertiajs/react';
 import type { PropsWithChildren } from 'react';
+import { Lock, Palette, Shield, User } from 'lucide-react';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -15,22 +16,22 @@ const sidebarNavItems: NavItem[] = [
     {
         title: 'Profile',
         href: edit(),
-        icon: null,
+        icon: User,
     },
     {
         title: 'Password',
         href: editPassword(),
-        icon: null,
+        icon: Lock,
     },
     {
         title: 'Two-Factor Auth',
         href: show(),
-        icon: null,
+        icon: Shield,
     },
     {
         title: 'Appearance',
         href: editAppearance(),
-        icon: null,
+        icon: Palette,
     },
 ];
 
@@ -49,10 +50,10 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
                 description="Manage your profile and account settings"
             />
 
-            <div className="flex flex-col lg:flex-row lg:space-x-12">
-                <aside className="w-full max-w-xl lg:w-48">
+            <div className="flex flex-col gap-6">
+                <aside className="w-full">
                     <nav
-                        className="flex flex-col space-y-1 space-x-0"
+                        className="flex flex-col gap-1"
                         aria-label="Settings"
                     >
                         {sidebarNavItems.map((item, index) => (
@@ -61,9 +62,12 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
                                 size="sm"
                                 variant="ghost"
                                 asChild
-                                className={cn('w-full justify-start', {
-                                    'bg-muted': isCurrentUrl(item.href),
-                                })}
+                                className={cn(
+                                    'min-h-[44px] w-full justify-start',
+                                    {
+                                        'bg-muted': isCurrentUrl(item.href),
+                                    },
+                                )}
                             >
                                 <Link href={item.href}>
                                     {item.icon && (
@@ -76,9 +80,9 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
                     </nav>
                 </aside>
 
-                <Separator className="my-6 lg:hidden" />
+                <Separator />
 
-                <div className="flex-1 md:max-w-2xl">
+                <div className="flex-1">
                     <section className="max-w-xl space-y-12">
                         {children}
                     </section>
