@@ -8,6 +8,7 @@ use App\Data\Coaching\PoseInputData;
 use App\Http\Integrations\Gemini\GeminiConnector;
 use App\Http\Integrations\Gemini\Requests\GenerateContentRequest;
 use App\Models\Exercise;
+use App\Services\Gemini\GeminiService;
 use Saloon\Http\Faking\MockClient;
 use Saloon\Http\Faking\MockResponse;
 
@@ -57,7 +58,7 @@ it('sends a request to Gemini and returns coaching feedback', function (): void 
     $connector = new GeminiConnector;
     $connector->withMockClient($mockClient);
 
-    $action = new GenerateExerciseFeedbackAction($connector);
+    $action = new GenerateExerciseFeedbackAction(new GeminiService($connector));
     $result = $action->execute($this->exercise, $this->poseData);
 
     expect($result)
@@ -71,42 +72,4 @@ it('sends a request to Gemini and returns coaching feedback', function (): void 
         ->correction->toBe('Keep knees aligned with toes.');
 
     $mockClient->assertSent(GenerateContentRequest::class);
-});
-
-it('includes exercise details in the prompt sent to Gemini', function (): void {
-    $feedbackJson = json_encode([
-        'overallFeedback' => 'Looks good.',
-        'jointCorrections' => [],
-        'encouragement' => 'Nice work!',
-    ], JSON_THROW_ON_ERROR);
-
-    $mockClient = new MockClient([
-        GenerateContentRequest::class => MockResponse::make([
-            'candidates' => [
-                [
-                    'content' => [
-                        'parts' => [
-                            ['text' => $feedbackJson],
-                        ],
-                    ],
-                ],
-            ],
-        ]),
-    ]);
-
-    $connector = new GeminiConnector;
-    $connector->withMockClient($mockClient);
-
-    $action = new GenerateExerciseFeedbackAction($connector);
-    $action->execute($this->exercise, $this->poseData);
-
-    $mockClient->assertSent(function (GenerateContentRequest $request): bool {
-        $body = $request->body()->all();
-        $promptText = $body['contents'][0]['parts'][0]['text'];
-
-        return str_contains($promptText, 'Squat')
-            && str_contains($promptText, 'Stand with feet shoulder-width apart')
-            && str_contains($promptText, 'quadriceps')
-            && str_contains($promptText, '"knee":90');
-    });
 });

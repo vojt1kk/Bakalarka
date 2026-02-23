@@ -3,7 +3,7 @@ import { FilesetResolver, PoseLandmarker, DrawingUtils } from '@mediapipe/tasks-
 import type { NormalizedLandmark } from '@mediapipe/tasks-vision';
 import type { Point3D } from '@/types';
 
-const MODEL_URL = 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task';
+const MODEL_URL = 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task';
 const WASM_URL = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm';
 
 export type UsePoseLandmarkerReturn = {
