@@ -1,35 +1,36 @@
-# Stage 1: Build frontend assets
-FROM node:22-alpine AS frontend
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci
-COPY . .
-RUN npm run build
-
-# Stage 2: Production PHP image
 FROM php:8.2-cli-alpine
 
+# Install PHP extensions + Node.js (Wayfinder needs php during npm build)
 RUN apk add --no-cache \
     postgresql-dev \
     libpng-dev \
     libzip-dev \
     zip \
     unzip \
+    nodejs \
+    npm \
     && docker-php-ext-install pdo pdo_pgsql pgsql gd zip bcmath opcache pcntl
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
-# Install PHP dependencies (cached layer)
+# PHP dependencies (cached layer)
 COPY composer.json composer.lock ./
 RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --no-scripts
+
+# Node dependencies (cached layer)
+COPY package*.json ./
+RUN npm ci
 
 # Copy application source
 COPY . .
 
-# Copy built frontend assets from stage 1
-COPY --from=frontend /app/public/build ./public/build
+# Minimal .env so Wayfinder artisan command works during npm build
+RUN cp .env.example .env && php artisan key:generate --force
+
+# Build frontend (Wayfinder Vite plugin calls php artisan wayfinder:generate)
+RUN npm run build
 
 # Post-install scripts, storage link, permissions
 RUN composer run-script post-autoload-dump \
