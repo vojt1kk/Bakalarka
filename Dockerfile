@@ -38,6 +38,9 @@ RUN composer run-script post-autoload-dump \
     && chown -R www-data:www-data storage bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache
 
+# Remove build-time .env — runtime uses Render environment variables
+RUN rm .env
+
 USER www-data
 
 EXPOSE 10000
