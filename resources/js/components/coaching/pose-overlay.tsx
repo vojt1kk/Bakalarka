@@ -13,12 +13,14 @@ export default function PoseOverlay({
     width,
     height,
     canvasRef,
+    isMirrored = false,
 }: {
     landmarks: Point3D[] | null;
     deviations: JointDeviation[];
     width: number;
     height: number;
     canvasRef: React.RefObject<HTMLCanvasElement | null>;
+    isMirrored?: boolean;
 }) {
     const drawingUtilsRef = useRef<DrawingUtils | null>(null);
 
@@ -96,7 +98,7 @@ export default function PoseOverlay({
         <canvas
             ref={canvasRef}
             className="pointer-events-none absolute inset-0 h-full w-full"
-            style={{ transform: 'scaleX(-1)'}}
+            style={isMirrored ? { transform: 'scaleX(-1)' } : undefined}
             width={width}
             height={height}
         />

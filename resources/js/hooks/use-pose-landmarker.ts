@@ -10,8 +10,10 @@ export type UsePoseLandmarkerReturn = {
     landmarks: Point3D[] | null;
     isLoading: boolean;
     isRunning: boolean;
+    isVideoFile: boolean;
     error: string | null;
     start: () => void;
+    startWithFile: (file: File) => void;
     stop: () => void;
     drawingUtils: DrawingUtils | null;
 };
@@ -23,6 +25,7 @@ export function usePoseLandmarker(
     const [landmarks, setLandmarks] = useState<Point3D[] | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isRunning, setIsRunning] = useState(false);
+    const [isVideoFile, setIsVideoFile] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     const landmarkerRef = useRef<PoseLandmarker | null>(null);
@@ -30,6 +33,7 @@ export function usePoseLandmarker(
     const animationFrameRef = useRef<number | null>(null);
     const lastVideoTimeRef = useRef(-1);
     const streamRef = useRef<MediaStream | null>(null);
+    const videoUrlRef = useRef<string | null>(null);
 
     const cleanup = useCallback(() => {
         if (animationFrameRef.current !== null) {
@@ -42,11 +46,18 @@ export function usePoseLandmarker(
             streamRef.current = null;
         }
 
+        if (videoUrlRef.current) {
+            URL.revokeObjectURL(videoUrlRef.current);
+            videoUrlRef.current = null;
+        }
+
         if (videoRef.current) {
             videoRef.current.srcObject = null;
+            videoRef.current.src = '';
         }
 
         setIsRunning(false);
+        setIsVideoFile(false);
         setLandmarks(null);
         lastVideoTimeRef.current = -1;
     }, [videoRef]);
@@ -162,6 +173,44 @@ export function usePoseLandmarker(
         }
     }, [videoRef, detectLoop]);
 
+    const startWithFile = useCallback(
+        async (file: File) => {
+            if (!landmarkerRef.current) {
+                setError('Pose detection model is not ready yet.');
+                return;
+            }
+
+            cleanup();
+
+            setError(null);
+            setIsVideoFile(true);
+
+            const url = URL.createObjectURL(file);
+            videoUrlRef.current = url;
+
+            const video = videoRef.current;
+            if (!video) {
+                return;
+            }
+
+            video.src = url;
+            video.loop = false;
+
+            const onEnded = () => {
+                setIsRunning(false);
+                setLandmarks(null);
+                video.removeEventListener('ended', onEnded);
+            };
+
+            video.addEventListener('ended', onEnded);
+
+            await video.play();
+            setIsRunning(true);
+            animationFrameRef.current = requestAnimationFrame(detectLoop);
+        },
+        [videoRef, cleanup, detectLoop],
+    );
+
     const stop = useCallback(() => {
         cleanup();
     }, [cleanup]);
@@ -170,8 +219,10 @@ export function usePoseLandmarker(
         landmarks,
         isLoading,
         isRunning,
+        isVideoFile,
         error,
         start,
+        startWithFile,
         stop,
         drawingUtils: drawingUtilsRef.current,
     };

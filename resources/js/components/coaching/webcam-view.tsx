@@ -1,4 +1,5 @@
-import { CameraIcon, CameraOffIcon } from 'lucide-react';
+import { useRef } from 'react';
+import { CameraIcon, CameraOffIcon, VideoIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import PoseOverlay from '@/components/coaching/pose-overlay';
@@ -14,8 +15,10 @@ export default function WebcamView({
     deviations,
     isLoading,
     isRunning,
+    isVideoFile,
     error,
     onStart,
+    onStartWithFile,
     onStop,
 }: {
     videoRef: React.RefObject<HTMLVideoElement | null>;
@@ -24,14 +27,26 @@ export default function WebcamView({
     deviations: JointDeviation[];
     isLoading: boolean;
     isRunning: boolean;
+    isVideoFile: boolean;
     error: string | null;
     onStart: () => void;
+    onStartWithFile: (file: File) => void;
     onStop: () => void;
 }) {
+    const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            onStartWithFile(file);
+        }
+        e.target.value = '';
+    };
+
     return (
         <div className="flex flex-col gap-4">
             <div
-                className="bg-muted relative overflow-hidden rounded-lg"
+                className="bg-muted relative mx-auto w-full max-w-xs overflow-hidden rounded-lg sm:max-w-none"
                 style={{ aspectRatio: `${VIDEO_WIDTH}/${VIDEO_HEIGHT}` }}
             >
                 <video
@@ -39,7 +54,7 @@ export default function WebcamView({
                     className="h-full w-full object-cover"
                     playsInline
                     muted
-                    style={{ transform: 'scaleX(-1)' }}
+                    style={isVideoFile ? undefined : { transform: 'scaleX(-1)' }}
                 />
 
                 <PoseOverlay
@@ -48,6 +63,7 @@ export default function WebcamView({
                     width={VIDEO_WIDTH}
                     height={VIDEO_HEIGHT}
                     canvasRef={canvasRef}
+                    isMirrored={!isVideoFile}
                 />
 
                 {!isRunning && !isLoading && (
@@ -68,23 +84,47 @@ export default function WebcamView({
 
             {error && <p className="text-sm text-destructive">{error}</p>}
 
-            <Button
-                onClick={isRunning ? onStop : onStart}
-                disabled={isLoading}
-                variant={isRunning ? 'destructive' : 'default'}
-            >
-                {isRunning ? (
-                    <>
-                        <CameraOffIcon />
-                        Stop Camera
-                    </>
-                ) : (
-                    <>
-                        <CameraIcon />
-                        Start Camera
-                    </>
-                )}
-            </Button>
+            <input ref={fileInputRef} type="file" accept="video/*" className="hidden" onChange={handleFileChange} />
+
+            <div className="flex gap-2">
+                <Button
+                    className="flex-1"
+                    onClick={isRunning ? onStop : onStart}
+                    disabled={isLoading}
+                    variant={isRunning && !isVideoFile ? 'destructive' : 'default'}
+                >
+                    {isRunning && !isVideoFile ? (
+                        <>
+                            <CameraOffIcon />
+                            Stop Camera
+                        </>
+                    ) : (
+                        <>
+                            <CameraIcon />
+                            Start Camera
+                        </>
+                    )}
+                </Button>
+
+                <Button
+                    className="flex-1"
+                    onClick={isRunning && isVideoFile ? onStop : () => fileInputRef.current?.click()}
+                    disabled={isLoading}
+                    variant={isRunning && isVideoFile ? 'destructive' : 'outline'}
+                >
+                    {isRunning && isVideoFile ? (
+                        <>
+                            <CameraOffIcon />
+                            Stop Video
+                        </>
+                    ) : (
+                        <>
+                            <VideoIcon />
+                            Load Video
+                        </>
+                    )}
+                </Button>
+            </div>
         </div>
     );
 }

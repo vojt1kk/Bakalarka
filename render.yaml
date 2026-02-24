@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: fitrack
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    preDeployCommand: php artisan migrate --force
+    envVars:
+      - key: APP_KEY
+        sync: false
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
+      - key: APP_URL
+        sync: false
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_URL
+        sync: false
+      - key: SESSION_DRIVER
+        value: database
+      - key: QUEUE_CONNECTION
+        value: sync
+      - key: LOG_CHANNEL
+        value: stderr
+      - key: GEMINI_API_KEY
+        sync: false
