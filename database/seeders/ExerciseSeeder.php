@@ -19,7 +19,7 @@ class ExerciseSeeder extends Seeder
                 'ppl_type' => 'push',
                 'ul_type' => 'upper',
                 'muscle_types' => json_encode(['chest', 'shoulders', 'triceps']),
-                'video_path' => null,
+                'video_path' => '',
             ],
             [
                 'name' => 'Squat',
@@ -28,7 +28,7 @@ class ExerciseSeeder extends Seeder
                 'ppl_type' => null,
                 'ul_type' => null,
                 'muscle_types' => json_encode(['quads', 'glutes', 'hamstrings', 'core']),
-                'video_path' => null,
+                'video_path' => '',
             ],
         ];
 
