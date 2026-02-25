@@ -1,3 +1,9 @@
+databases:
+  - name: fitrack-db
+    databaseName: fitrack
+    user: fitrack
+    plan: free
+
 services:
   - type: web
     name: fitrack
@@ -17,7 +23,9 @@ services:
       - key: DB_CONNECTION
         value: pgsql
       - key: DATABASE_URL
-        sync: false
+        fromDatabase:
+          name: fitrack-db
+          property: connectionString
       - key: SESSION_DRIVER
         value: database
       - key: QUEUE_CONNECTION
