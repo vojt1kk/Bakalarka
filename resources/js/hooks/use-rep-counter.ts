@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import type { ExerciseReference, JointAngles, JointDeviation, Point3D } from '@/types';
 import { detectDeviations, extractJointAngles } from '@/lib/pose-detection';
 
@@ -19,7 +19,7 @@ export function useRepCounter(reference: ExerciseReference): UseRepCounterReturn
 
     const previousPhaseRef = useRef<string>('');
 
-    const phaseNames = Object.keys(reference.phases);
+    const phaseNames = useMemo(() => Object.keys(reference.phases), [reference.phases]);
 
     const detectPhase = useCallback(
         (angles: JointAngles): string => {

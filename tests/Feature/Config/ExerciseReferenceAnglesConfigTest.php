@@ -37,6 +37,6 @@ describe('Gemini Config', function (): void {
         expect(config('services.gemini'))
             ->toBeArray()
             ->toHaveKeys(['api_key', 'model'])
-            ->and(config('services.gemini.model'))->toBe('gemini-2.0-flash');
+            ->and(config('services.gemini.model'))->toBe('gemini-3.5-flash');
     });
 });

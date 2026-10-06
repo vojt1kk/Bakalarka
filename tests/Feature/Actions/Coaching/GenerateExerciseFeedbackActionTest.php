@@ -15,7 +15,7 @@ use Saloon\Http\Faking\MockResponse;
 beforeEach(function (): void {
     config([
         'services.gemini.api_key' => 'test-api-key',
-        'services.gemini.model' => 'gemini-2.0-flash',
+        'services.gemini.model' => 'gemini-3.5-flash',
     ]);
 
     $this->exercise = Exercise::factory()->create([
@@ -72,4 +72,12 @@ it('sends a request to Gemini and returns coaching feedback', function (): void 
         ->correction->toBe('Keep knees aligned with toes.');
 
     $mockClient->assertSent(GenerateContentRequest::class);
+});
+
+it('requests minimal thinking from Gemini to keep feedback latency low', function (): void {
+    $request = new GenerateContentRequest('gemini-3.5-flash', 'prompt');
+
+    expect($request->body()->all())
+        ->toHaveKey('generationConfig.thinkingConfig.thinkingLevel', 'minimal')
+        ->toHaveKey('generationConfig.response_mime_type', 'application/json');
 });

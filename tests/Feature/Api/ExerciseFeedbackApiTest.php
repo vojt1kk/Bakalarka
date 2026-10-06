@@ -13,7 +13,7 @@ use function Pest\Laravel\postJson;
 beforeEach(function (): void {
     config([
         'services.gemini.api_key' => 'test-api-key',
-        'services.gemini.model' => 'gemini-2.0-flash',
+        'services.gemini.model' => 'gemini-3.5-flash',
     ]);
 
     $this->exercise = Exercise::factory()->create([

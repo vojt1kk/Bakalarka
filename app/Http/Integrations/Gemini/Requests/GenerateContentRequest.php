@@ -36,6 +36,9 @@ final class GenerateContentRequest extends Request implements HasBody
     }
 
     /**
+     * Thinking is set to "minimal" because real-time coaching needs low latency
+     * more than deep reasoning (~1.3s vs ~3s with default thinking).
+     *
      * @return array<string, mixed>
      */
     protected function defaultBody(): array
@@ -46,6 +49,9 @@ final class GenerateContentRequest extends Request implements HasBody
             ],
             'generationConfig' => [
                 'response_mime_type' => 'application/json',
+                'thinkingConfig' => [
+                    'thinkingLevel' => 'minimal',
+                ],
             ],
         ];
     }
