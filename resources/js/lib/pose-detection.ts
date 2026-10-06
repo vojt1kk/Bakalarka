@@ -1,4 +1,4 @@
-import type { JointAngles, JointDeviation, PhaseReference, Point3D } from '@/types/coaching';
+import type { JointAngles, JointDeviation, KeyPoints, PhaseReference, Point3D } from '@/types/coaching';
 
 /**
  * MediaPipe Pose landmark indices.
@@ -72,6 +72,37 @@ const referenceKeyMap: Record<string, [string, string]> = {
  * Extract named joint angles from 33 MediaPipe pose landmarks.
  * Returns both individual (left/right) and averaged angles for reference matching.
  */
+const keyPointLandmarks: Record<string, number> = {
+    left_shoulder: Landmark.LeftShoulder,
+    right_shoulder: Landmark.RightShoulder,
+    left_hip: Landmark.LeftHip,
+    right_hip: Landmark.RightHip,
+    left_knee: Landmark.LeftKnee,
+    right_knee: Landmark.RightKnee,
+    left_ankle: Landmark.LeftAnkle,
+    right_ankle: Landmark.RightAnkle,
+};
+
+function round3(value: number): number {
+    return Math.round(value * 1000) / 1000;
+}
+
+/**
+ * Pick the joints sent to the AI as [x, y, z, visibility] in MediaPipe's normalized coordinates.
+ */
+export function extractKeyPoints(landmarks: Point3D[]): KeyPoints {
+    const points: KeyPoints = {};
+
+    for (const [name, index] of Object.entries(keyPointLandmarks)) {
+        const landmark = landmarks[index];
+        if (landmark) {
+            points[name] = [round3(landmark.x), round3(landmark.y), round3(landmark.z), round3(landmark.visibility ?? 0)];
+        }
+    }
+
+    return points;
+}
+
 export function extractJointAngles(landmarks: Point3D[]): JointAngles {
     const angles: JointAngles = {};
 
@@ -115,4 +146,41 @@ export function detectDeviations(angles: JointAngles, reference: PhaseReference)
     }
 
     return deviations;
+}
+
+/**
+ * Average absolute deviation of measured angles from the ideal angles of a phase.
+ * Returns null when none of the phase joints were measured.
+ */
+export function scorePhase(angles: JointAngles, phaseRef: PhaseReference): number | null {
+    let totalDeviation = 0;
+    let jointCount = 0;
+
+    for (const [joint, range] of Object.entries(phaseRef)) {
+        if (angles[joint] !== undefined) {
+            totalDeviation += Math.abs(angles[joint] - range.ideal);
+            jointCount++;
+        }
+    }
+
+    return jointCount > 0 ? totalDeviation / jointCount : null;
+}
+
+/**
+ * Name of the phase whose ideal angles are closest to the measured angles.
+ */
+export function detectPhase(angles: JointAngles, phases: Record<string, PhaseReference>): string {
+    let bestPhase = '';
+    let bestScore = Infinity;
+
+    for (const [phaseName, phaseRef] of Object.entries(phases)) {
+        const score = scorePhase(angles, phaseRef);
+
+        if (score !== null && score < bestScore) {
+            bestScore = score;
+            bestPhase = phaseName;
+        }
+    }
+
+    return bestPhase;
 }

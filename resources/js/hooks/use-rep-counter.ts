@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
+import { detectDeviations, detectPhase, extractJointAngles } from '@/lib/pose-detection';
 import type { ExerciseReference, JointAngles, JointDeviation, Point3D } from '@/types';
-import { detectDeviations, extractJointAngles } from '@/lib/pose-detection';
 
 export type UseRepCounterReturn = {
     repCount: number;
@@ -21,42 +21,12 @@ export function useRepCounter(reference: ExerciseReference): UseRepCounterReturn
 
     const phaseNames = useMemo(() => Object.keys(reference.phases), [reference.phases]);
 
-    const detectPhase = useCallback(
-        (angles: JointAngles): string => {
-            let bestPhase = '';
-            let bestScore = Infinity;
-
-            for (const [phaseName, phaseRef] of Object.entries(reference.phases)) {
-                let totalDeviation = 0;
-                let jointCount = 0;
-
-                for (const [joint, range] of Object.entries(phaseRef)) {
-                    if (angles[joint] !== undefined) {
-                        totalDeviation += Math.abs(angles[joint] - range.ideal);
-                        jointCount++;
-                    }
-                }
-
-                if (jointCount > 0) {
-                    const avgDeviation = totalDeviation / jointCount;
-                    if (avgDeviation < bestScore) {
-                        bestScore = avgDeviation;
-                        bestPhase = phaseName;
-                    }
-                }
-            }
-
-            return bestPhase;
-        },
-        [reference.phases],
-    );
-
     const processLandmarks = useCallback(
         (landmarks: Point3D[]) => {
             const angles = extractJointAngles(landmarks);
             setJointAngles(angles);
 
-            const phase = detectPhase(angles);
+            const phase = detectPhase(angles, reference.phases);
             setCurrentPhase(phase);
 
             const phaseRef = reference.phases[phase];
@@ -75,7 +45,7 @@ export function useRepCounter(reference: ExerciseReference): UseRepCounterReturn
 
             previousPhaseRef.current = phase;
         },
-        [detectPhase, reference.phases, phaseNames],
+        [reference.phases, phaseNames],
     );
 
     const resetCount = useCallback(() => {

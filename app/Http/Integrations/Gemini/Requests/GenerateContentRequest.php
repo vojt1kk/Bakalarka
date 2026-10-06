@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Integrations\Gemini\Requests;
 
-use App\Data\Coaching\CoachingFeedbackData;
 use Saloon\Contracts\Body\HasBody;
 use Saloon\Enums\Method;
 use Saloon\Http\Request;
@@ -27,12 +26,14 @@ final class GenerateContentRequest extends Request implements HasBody
         return "/models/{$this->model}:generateContent";
     }
 
-    public function createDtoFromResponse(Response $response): CoachingFeedbackData
+    /**
+     * @return array<string, mixed>
+     */
+    public function createDtoFromResponse(Response $response): array
     {
         $text = $response->json('candidates.0.content.parts.0.text');
-        $parsed = json_decode((string) $text, true, 512, JSON_THROW_ON_ERROR);
 
-        return CoachingFeedbackData::fromArray($parsed);
+        return json_decode((string) $text, true, 512, JSON_THROW_ON_ERROR);
     }
 
     /**

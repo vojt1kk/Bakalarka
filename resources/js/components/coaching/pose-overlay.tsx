@@ -1,5 +1,5 @@
-import { useEffect, useRef } from 'react';
 import { PoseLandmarker, DrawingUtils } from '@mediapipe/tasks-vision';
+import { useEffect, useRef } from 'react';
 import type { Point3D, JointDeviation } from '@/types';
 
 const LANDMARK_STYLE = { color: '#00FF00', lineWidth: 2, radius: 4 };

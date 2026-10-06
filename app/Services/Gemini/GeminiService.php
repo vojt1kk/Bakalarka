@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services\Gemini;
 
-use App\Data\Coaching\CoachingFeedbackData;
 use App\Http\Integrations\Gemini\GeminiConnector;
 use App\Http\Integrations\Gemini\Requests\GenerateContentRequest;
 use Stringable;
@@ -15,7 +14,10 @@ final readonly class GeminiService
         private GeminiConnector $connector,
     ) {}
 
-    public function generateFeedback(string|Stringable $prompt): CoachingFeedbackData
+    /**
+     * @return array<string, mixed>
+     */
+    public function generateJson(string|Stringable $prompt): array
     {
         return $this->connector->send(
             new GenerateContentRequest(config('services.gemini.model'), (string) $prompt)

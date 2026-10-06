@@ -1,17 +1,17 @@
-import { useEffect, useRef } from 'react';
 import { Head } from '@inertiajs/react';
-import AppLayout from '@/layouts/app-layout';
+import { Play, BookOpen, Camera } from 'lucide-react';
+import { useCallback, useEffect, useRef } from 'react';
+import RepFeedbackPanel from '@/components/coaching/rep-feedback-panel';
+import WebcamView from '@/components/coaching/webcam-view';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import WebcamView from '@/components/coaching/webcam-view';
-import FeedbackPanel from '@/components/coaching/feedback-panel';
 import { usePoseLandmarker } from '@/hooks/use-pose-landmarker';
 import { useRepCounter } from '@/hooks/use-rep-counter';
-import { useExerciseFeedback } from '@/hooks/use-exercise-feedback';
-import { Play, BookOpen, Camera } from 'lucide-react';
+import { useRepFeedback } from '@/hooks/use-rep-feedback';
+import AppLayout from '@/layouts/app-layout';
 import { dashboard, exercises } from '@/routes';
 import type { BreadcrumbItem } from '@/types';
-import type { ExerciseReference } from '@/types/coaching';
+import type { ExerciseReference, FrameSize, Point3D } from '@/types/coaching';
 
 type Exercise = {
     id: number;
@@ -33,16 +33,41 @@ export default function ExerciseShow({
 }) {
     const videoRef = useRef<HTMLVideoElement | null>(null);
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
-
-    const { landmarks, isLoading, isRunning, isVideoFile, error: poseError, start, startWithFile, stop } = usePoseLandmarker(videoRef, canvasRef);
-    const { repCount, currentPhase, jointAngles, deviations, processLandmarks, resetCount } =
-        useRepCounter(referenceAngles);
+    const gifCanvasRef = useRef<HTMLCanvasElement | null>(null);
+    const { deviations, processLandmarks, resetCount } = useRepCounter(referenceAngles);
+    const supportsRepFeedback = referenceAngles.tempo !== undefined;
     const {
-        feedback,
-        isLoading: feedbackLoading,
-        error: feedbackError,
-        requestFeedback,
-    } = useExerciseFeedback(exercise.id);
+        repCount: detectedRepCount,
+        state: repState,
+        lastFeedback: repFeedback,
+        isLoading: repFeedbackLoading,
+        error: repFeedbackError,
+        processLandmarks: processRepLandmarks,
+        flush: flushRepFeedback,
+        reset: resetRepFeedback,
+    } = useRepFeedback(exercise.id, referenceAngles);
+
+    const handlePoseFrame = useCallback(
+        (frameLandmarks: Point3D[], mediaTimestampMs: number, frame: FrameSize) => {
+            if (supportsRepFeedback) {
+                processRepLandmarks(frameLandmarks, mediaTimestampMs, frame);
+            }
+        },
+        [supportsRepFeedback, processRepLandmarks],
+    );
+
+    const {
+        landmarks,
+        isLoading,
+        isRunning,
+        isVideoFile,
+        isGif,
+        mediaAspectRatio,
+        error: poseError,
+        start,
+        startWithFile,
+        stop,
+    } = usePoseLandmarker(videoRef, canvasRef, gifCanvasRef, handlePoseFrame);
 
     useEffect(() => {
         if (landmarks) {
@@ -51,14 +76,21 @@ export default function ExerciseShow({
     }, [landmarks, processLandmarks]);
 
     useEffect(() => {
-        if (isRunning && Object.keys(jointAngles).length > 0 && currentPhase) {
-            requestFeedback(jointAngles, deviations, currentPhase, repCount);
+        if (!isRunning) {
+            flushRepFeedback();
         }
-    }, [isRunning, jointAngles, deviations, currentPhase, repCount, requestFeedback]);
+    }, [isRunning, flushRepFeedback]);
+
+    const handleStartWithFile = (file: File) => {
+        resetCount();
+        resetRepFeedback();
+        startWithFile(file);
+    };
 
     const handleStop = () => {
         stop();
         resetCount();
+        resetRepFeedback();
     };
 
     const breadcrumbs: BreadcrumbItem[] = [
@@ -116,14 +148,17 @@ export default function ExerciseShow({
                             <WebcamView
                                 videoRef={videoRef}
                                 canvasRef={canvasRef}
+                                gifCanvasRef={gifCanvasRef}
                                 landmarks={landmarks}
                                 deviations={deviations}
                                 isLoading={isLoading}
                                 isRunning={isRunning}
                                 isVideoFile={isVideoFile}
+                                isGif={isGif}
+                                mediaAspectRatio={mediaAspectRatio}
                                 error={poseError}
                                 onStart={start}
-                                onStartWithFile={startWithFile}
+                                onStartWithFile={handleStartWithFile}
                                 onStop={handleStop}
                             />
                         </CardContent>
@@ -131,13 +166,15 @@ export default function ExerciseShow({
 
                     {/* Info column: feedback + video + instructions */}
                     <div className="flex flex-col gap-4">
-                        <FeedbackPanel
-                            feedback={feedback}
-                            isLoading={feedbackLoading}
-                            repCount={repCount}
-                            currentPhase={currentPhase}
-                            error={feedbackError}
-                        />
+                        {supportsRepFeedback && (
+                            <RepFeedbackPanel
+                                feedback={repFeedback}
+                                isLoading={repFeedbackLoading}
+                                repCount={detectedRepCount}
+                                state={repState}
+                                error={repFeedbackError}
+                            />
+                        )}
 
                         {exercise.video_path && (
                             <Card className="overflow-hidden">

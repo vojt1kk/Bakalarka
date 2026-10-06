@@ -1,21 +1,23 @@
-import { useRef } from 'react';
 import { CameraIcon, CameraOffIcon, VideoIcon } from 'lucide-react';
+import { useRef } from 'react';
+import PoseOverlay from '@/components/coaching/pose-overlay';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
-import PoseOverlay from '@/components/coaching/pose-overlay';
 import type { JointDeviation, Point3D } from '@/types';
 
 export const VIDEO_WIDTH = 640;
-export const VIDEO_HEIGHT = 480;
 
 export default function WebcamView({
     videoRef,
     canvasRef,
+    gifCanvasRef,
     landmarks,
     deviations,
     isLoading,
     isRunning,
     isVideoFile,
+    isGif,
+    mediaAspectRatio,
     error,
     onStart,
     onStartWithFile,
@@ -23,11 +25,14 @@ export default function WebcamView({
 }: {
     videoRef: React.RefObject<HTMLVideoElement | null>;
     canvasRef: React.RefObject<HTMLCanvasElement | null>;
+    gifCanvasRef: React.RefObject<HTMLCanvasElement | null>;
     landmarks: Point3D[] | null;
     deviations: JointDeviation[];
     isLoading: boolean;
     isRunning: boolean;
     isVideoFile: boolean;
+    isGif: boolean;
+    mediaAspectRatio: number;
     error: string | null;
     onStart: () => void;
     onStartWithFile: (file: File) => void;
@@ -46,22 +51,28 @@ export default function WebcamView({
     return (
         <div className="flex flex-col gap-4">
             <div
-                className="bg-muted relative mx-auto w-full max-w-xs overflow-hidden rounded-lg sm:max-w-none"
-                style={{ aspectRatio: `${VIDEO_WIDTH}/${VIDEO_HEIGHT}` }}
+                className="bg-muted relative mx-auto w-full max-w-[min(20rem,var(--media-max-w))] overflow-hidden rounded-lg sm:max-w-(--media-max-w)"
+                style={
+                    {
+                        aspectRatio: mediaAspectRatio,
+                        '--media-max-w': `calc(70vh * ${mediaAspectRatio})`,
+                    } as React.CSSProperties
+                }
             >
                 <video
                     ref={videoRef}
-                    className="h-full w-full object-cover"
+                    className={isGif ? 'hidden' : 'h-full w-full object-contain'}
                     playsInline
                     muted
                     style={isVideoFile ? undefined : { transform: 'scaleX(-1)' }}
                 />
+                <canvas ref={gifCanvasRef} className={isGif ? 'h-full w-full object-contain' : 'hidden'} />
 
                 <PoseOverlay
                     landmarks={landmarks}
                     deviations={deviations}
                     width={VIDEO_WIDTH}
-                    height={VIDEO_HEIGHT}
+                    height={Math.round(VIDEO_WIDTH / mediaAspectRatio)}
                     canvasRef={canvasRef}
                     isMirrored={!isVideoFile}
                 />
@@ -84,7 +95,7 @@ export default function WebcamView({
 
             {error && <p className="text-sm text-destructive">{error}</p>}
 
-            <input ref={fileInputRef} type="file" accept="video/*" className="hidden" onChange={handleFileChange} />
+            <input ref={fileInputRef} type="file" accept="video/*,image/gif" className="hidden" onChange={handleFileChange} />
 
             <div className="flex gap-2">
                 <Button
@@ -120,7 +131,7 @@ export default function WebcamView({
                     ) : (
                         <>
                             <VideoIcon />
-                            Load Video
+                            Load Video / GIF
                         </>
                     )}
                 </Button>

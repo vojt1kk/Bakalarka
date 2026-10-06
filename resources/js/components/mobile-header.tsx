@@ -1,15 +1,15 @@
 import { Link, usePage } from '@inertiajs/react';
+import AppLogoIcon from '@/components/app-logo-icon';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { UserMenuContent } from '@/components/user-menu-content';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useInitials } from '@/hooks/use-initials';
-import AppLogoIcon from '@/components/app-logo-icon';
-import type { Auth } from '@/types';
 import { dashboard } from '@/routes';
+import type { Auth } from '@/types';
 
 export function MobileHeader() {
     const { auth } = usePage<{ auth: Auth }>().props;

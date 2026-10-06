@@ -1,15 +1,15 @@
 import { Head, Link } from '@inertiajs/react';
-import AppLayout from '@/layouts/app-layout';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Dumbbell, Search, ArrowRight } from 'lucide-react';
+import { useState } from 'react';
+import ExerciseShowController from '@/actions/App/Http/Controllers/ExerciseShowController';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Dumbbell, Search, ArrowRight } from 'lucide-react';
-import ExerciseShowController from '@/actions/App/Http/Controllers/ExerciseShowController';
+import AppLayout from '@/layouts/app-layout';
 import { dashboard, exercises } from '@/routes';
 import type { BreadcrumbItem } from '@/types';
-import { useState } from 'react';
 
 type Exercise = {
     id: number;
