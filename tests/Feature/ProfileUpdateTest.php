@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Models\User;
+use Inertia\Testing\AssertableInertia as Assert;
 
 test('profile page is displayed', function (): void {
     $user = User::factory()->create();
@@ -11,7 +12,13 @@ test('profile page is displayed', function (): void {
         ->actingAs($user)
         ->get(route('profile.edit'));
 
-    $response->assertOk();
+    $response
+        ->assertOk()
+        ->assertInertia(fn (Assert $page): Assert => $page->component('profile'));
+});
+
+test('guests are redirected to the login page from profile', function (): void {
+    $this->get(route('profile.edit'))->assertRedirect(route('login'));
 });
 
 test('profile information can be updated', function (): void {

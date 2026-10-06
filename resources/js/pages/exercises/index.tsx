@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import AppLayout from '@/layouts/app-layout';
-import { dashboard, exercises } from '@/routes';
+import { exercises } from '@/routes';
 import type { BreadcrumbItem } from '@/types';
 
 type Exercise = {
@@ -39,7 +39,6 @@ const PPL_AVATAR_COLORS: Record<string, string> = {
 };
 
 const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Dashboard', href: dashboard().url },
     { title: 'Exercises', href: exercises().url },
 ];
 

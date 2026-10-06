@@ -5,22 +5,12 @@ declare(strict_types=1);
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 
-test('password update page is displayed', function (): void {
-    $user = User::factory()->create();
-
-    $response = $this
-        ->actingAs($user)
-        ->get(route('user-password.edit'));
-
-    $response->assertOk();
-});
-
 test('password can be updated', function (): void {
     $user = User::factory()->create();
 
     $response = $this
         ->actingAs($user)
-        ->from(route('user-password.edit'))
+        ->from(route('profile.edit'))
         ->put(route('user-password.update'), [
             'current_password' => 'password',
             'password' => 'new-password',
@@ -29,7 +19,7 @@ test('password can be updated', function (): void {
 
     $response
         ->assertSessionHasNoErrors()
-        ->assertRedirect(route('user-password.edit'));
+        ->assertRedirect(route('profile.edit'));
 
     expect(Hash::check('new-password', $user->refresh()->password))->toBeTrue();
 });
@@ -39,7 +29,7 @@ test('correct password must be provided to update password', function (): void {
 
     $response = $this
         ->actingAs($user)
-        ->from(route('user-password.edit'))
+        ->from(route('profile.edit'))
         ->put(route('user-password.update'), [
             'current_password' => 'wrong-password',
             'password' => 'new-password',
@@ -48,5 +38,5 @@ test('correct password must be provided to update password', function (): void {
 
     $response
         ->assertSessionHasErrors('current_password')
-        ->assertRedirect(route('user-password.edit'));
+        ->assertRedirect(route('profile.edit'));
 });

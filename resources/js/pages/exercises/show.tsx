@@ -9,7 +9,7 @@ import { usePoseLandmarker } from '@/hooks/use-pose-landmarker';
 import { useRepCounter } from '@/hooks/use-rep-counter';
 import { useRepFeedback } from '@/hooks/use-rep-feedback';
 import AppLayout from '@/layouts/app-layout';
-import { dashboard, exercises } from '@/routes';
+import { exercises } from '@/routes';
 import type { BreadcrumbItem } from '@/types';
 import type { ExerciseReference, FrameSize, Point3D } from '@/types/coaching';
 
@@ -94,7 +94,6 @@ export default function ExerciseShow({
     };
 
     const breadcrumbs: BreadcrumbItem[] = [
-        { title: 'Dashboard', href: dashboard().url },
         { title: 'Exercises', href: exercises().url },
         { title: exercise.name, href: `/exercises/${exercise.id}` },
     ];

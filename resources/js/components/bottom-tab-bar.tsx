@@ -1,17 +1,11 @@
 import { Link } from '@inertiajs/react';
-import { CircleUser, Dumbbell, LayoutGrid, Settings } from 'lucide-react';
+import { CircleUser, Dumbbell } from 'lucide-react';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { cn } from '@/lib/utils';
-import { dashboard, exercises } from '@/routes';
+import { exercises } from '@/routes';
 import { edit } from '@/routes/profile';
 
 const tabs = [
-    {
-        label: 'Home',
-        href: dashboard(),
-        icon: LayoutGrid,
-        matchPrefix: '/dashboard',
-    },
     {
         label: 'Exercises',
         href: exercises(),
@@ -19,16 +13,10 @@ const tabs = [
         matchPrefix: '/exercises',
     },
     {
-        label: 'Settings',
-        href: edit(),
-        icon: Settings,
-        matchPrefix: '/settings',
-    },
-    {
         label: 'Profile',
         href: edit(),
         icon: CircleUser,
-        matchPrefix: '/settings/profile',
+        matchPrefix: '/profile',
     },
 ] as const;
 

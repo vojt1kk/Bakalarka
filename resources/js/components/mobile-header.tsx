@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { UserMenuContent } from '@/components/user-menu-content';
 import { useInitials } from '@/hooks/use-initials';
-import { dashboard } from '@/routes';
+import { exercises } from '@/routes';
 import type { Auth } from '@/types';
 
 export function MobileHeader() {
@@ -18,7 +18,7 @@ export function MobileHeader() {
     return (
         <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-border bg-background/80 px-4 backdrop-blur-lg">
             <Link
-                href={dashboard()}
+                href={exercises()}
                 prefetch
                 className="flex items-center gap-2"
             >
