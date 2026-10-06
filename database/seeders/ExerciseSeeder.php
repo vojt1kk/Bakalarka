@@ -9,18 +9,12 @@ use Illuminate\Support\Facades\DB;
 
 class ExerciseSeeder extends Seeder
 {
+    /**
+     * Seed the exercise catalogue and remove exercises that are no longer part of it.
+     */
     public function run(): void
     {
         $exercises = [
-            [
-                'name' => 'Bench press',
-                'description' => 'Tlak na rovné lavici',
-                'instructions' => 'Lehni si, chyť činku, tlač nahoru.',
-                'ppl_type' => 'push',
-                'ul_type' => 'upper',
-                'muscle_types' => json_encode(['chest', 'shoulders', 'triceps']),
-                'video_path' => '',
-            ],
             [
                 'name' => 'Squat',
                 'description' => 'Basic bodyweight squat exercise.',
@@ -31,6 +25,10 @@ class ExerciseSeeder extends Seeder
                 'video_path' => '',
             ],
         ];
+
+        DB::table('exercises')
+            ->whereNotIn('name', array_column($exercises, 'name'))
+            ->delete();
 
         foreach ($exercises as $exercise) {
             DB::table('exercises')->updateOrInsert(
