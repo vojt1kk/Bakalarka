@@ -9,6 +9,8 @@
         "format": "prettier --write resources/",
         "format:check": "prettier --check resources/",
         "lint": "eslint . --fix",
+        "test": "vitest run",
+        "test:watch": "vitest",
         "types": "tsc --noEmit"
     },
     "devDependencies": {
@@ -24,7 +26,8 @@
         "eslint-plugin-react-hooks": "^7.0.0",
         "prettier": "^3.4.2",
         "prettier-plugin-tailwindcss": "^0.6.11",
-        "typescript-eslint": "^8.23.0"
+        "typescript-eslint": "^8.23.0",
+        "vitest": "^5.0.3"
     },
     "dependencies": {
         "@ai-sdk/anthropic": "^3.0.44",

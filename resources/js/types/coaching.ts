@@ -89,4 +89,6 @@ export type RepFeedback = {
     encouragement: string;
 };
 
-export type RepDetectorState = 'start' | 'descending' | 'bottom' | 'ascending';
+export type RepDetectorState = 'calibrating' | 'calibration_failed' | 'start' | 'descending' | 'bottom' | 'ascending';
+
+export type PreflightStatus = 'pending' | 'ready' | 'error';

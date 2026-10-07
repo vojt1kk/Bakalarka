@@ -6,6 +6,8 @@ import type { JointDeviation, Point3D } from '@/types';
 
 export const VIDEO_WIDTH = 640;
 
+export type CalibrationOverlayState = 'idle' | 'calibrating' | 'failed';
+
 export default function WebcamView({
     videoRef,
     canvasRef,
@@ -17,6 +19,7 @@ export default function WebcamView({
     isVideoFile,
     isGif,
     mediaAspectRatio,
+    calibrationState = 'idle',
     className,
 }: {
     videoRef: React.RefObject<HTMLVideoElement | null>;
@@ -29,6 +32,7 @@ export default function WebcamView({
     isVideoFile: boolean;
     isGif: boolean;
     mediaAspectRatio: number;
+    calibrationState?: CalibrationOverlayState;
     className?: string;
 }) {
     return (
@@ -70,6 +74,23 @@ export default function WebcamView({
                 </div>
             )}
 
+            {isRunning && calibrationState !== 'idle' && (
+                <div className="pointer-events-none absolute inset-x-0 top-4 flex justify-center px-4">
+                    <div
+                        role="status"
+                        className={cn(
+                            'flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium text-white backdrop-blur-sm',
+                            calibrationState === 'failed' ? 'bg-destructive/80' : 'bg-black/60',
+                        )}
+                    >
+                        {calibrationState === 'calibrating' && <Spinner className="size-4" />}
+                        {calibrationState === 'calibrating'
+                            ? 'Kalibruji postoj — stůj vzpřímeně'
+                            : 'Nelze zachytit postoj — stůj chvíli klidně'}
+                    </div>
+                </div>
+            )}
+
             {isLoading && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/20">
                     <div className="flex items-center gap-2 text-white">
@@ -102,6 +123,7 @@ export function WebcamControls({
     isRunning,
     isVideoFile,
     error,
+    canStart,
     onStart,
     onStartWithFile,
     onStop,
@@ -110,6 +132,7 @@ export function WebcamControls({
     isRunning: boolean;
     isVideoFile: boolean;
     error: string | null;
+    canStart: boolean;
     onStart: () => void;
     onStartWithFile: (file: File) => void;
     onStop: () => void;
@@ -128,11 +151,15 @@ export function WebcamControls({
             }
             const key = event.key.toLowerCase();
             if (key === 'c') {
-                (isCameraRunning ? onStop : onStart)();
+                if (isCameraRunning) {
+                    onStop();
+                } else if (canStart) {
+                    onStart();
+                }
             } else if (key === 'v') {
                 if (isFileRunning) {
                     onStop();
-                } else {
+                } else if (canStart) {
                     fileInputRef.current?.click();
                 }
             }
@@ -141,7 +168,7 @@ export function WebcamControls({
         window.addEventListener('keydown', handleKeyDown);
 
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [isLoading, isCameraRunning, isFileRunning, onStart, onStop]);
+    }, [isLoading, isCameraRunning, isFileRunning, canStart, onStart, onStop]);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -160,7 +187,7 @@ export function WebcamControls({
             <button
                 type="button"
                 onClick={toggleCamera}
-                disabled={isLoading}
+                disabled={isLoading || (!isCameraRunning && !canStart)}
                 aria-keyshortcuts="C"
                 className={cn(
                     'inline-flex h-11 items-center justify-center gap-3 rounded-full text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50',
@@ -176,7 +203,7 @@ export function WebcamControls({
             <button
                 type="button"
                 onClick={toggleFile}
-                disabled={isLoading}
+                disabled={isLoading || (!isFileRunning && !canStart)}
                 aria-keyshortcuts="V"
                 className={cn(
                     'inline-flex h-11 items-center justify-center gap-3 rounded-full border text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50',

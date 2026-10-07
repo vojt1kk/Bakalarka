@@ -4,6 +4,8 @@ import { Spinner } from '@/components/ui/spinner';
 import type { RepDetectorState, RepFeedback, RepSectionFeedback } from '@/types';
 
 const STATE_LABELS: Record<RepDetectorState, string> = {
+    calibrating: 'Kalibrace postoje',
+    calibration_failed: 'Nedaří se kalibrovat',
     start: 'Výchozí pozice',
     descending: 'Klesání',
     bottom: 'Bod obratu',

@@ -3,18 +3,24 @@ import type { JointAngles, KeyPoints, RepAngles, RepDetectorState, RepKeyframe, 
 const STANDING_TOLERANCE_DEG = 20;
 const DESCENT_DROP_DEG = 35;
 const MOVEMENT_DEG = 10;
-const MIN_STANDING_DEG = 120;
 const HOLD_MS = 500;
 const SETTLE_MS = 300;
 const MIN_REP_MS = 400;
 const REVERSAL_DEG = 10;
 const REVERSAL_HOLD_MS = 120;
+const CALIBRATION_MIN_MS = 800;
+const CALIBRATION_STABILITY_DEG = 15;
+const CALIBRATION_MIN_EXTENSION_DEG = 120;
+const CALIBRATION_TIMEOUT_MS = 3000;
+const CALIBRATION_MIN_SAMPLES = 10;
 
 export type RepDetector = {
     update: (angles: JointAngles, timestampMs: number, points: KeyPoints) => RepSummary | null;
     reset: () => void;
     getState: () => RepDetectorState;
     getCompletedReps: () => number;
+    getBaseline: () => number | null;
+    isReady: () => boolean;
     flush: () => RepSummary | null;
 };
 
@@ -54,6 +60,14 @@ function round(value: number, decimals: number): number {
     return Math.round(value * factor) / factor;
 }
 
+function percentile(sorted: number[], ratio: number): number {
+    const index = (sorted.length - 1) * ratio;
+    const lower = Math.floor(index);
+    const upper = Math.min(lower + 1, sorted.length - 1);
+
+    return sorted[lower] + (sorted[upper] - sorted[lower]) * (index - lower);
+}
+
 function toKeyframe(sample: Sample): RepKeyframe {
     return {
         angles: { knee: round(sample.angles.knee, 1), hip: round(sample.angles.hip, 1) },
@@ -64,9 +78,14 @@ function toKeyframe(sample: Sample): RepKeyframe {
 /**
  * Rep state machine driven by the knee/hip extension signal. Each keyframe in the summary is one real frame,
  * so its angles and points always belong together.
+ *
+ * The detector starts in `calibrating`: the standing baseline is fixed once from the median of a stable upright window
+ * and never changes afterwards, so a person who starts mid-movement cannot inflate it and lose the first rep.
+ * If no stable window is found within the timeout the state becomes `calibration_failed`, which stops counting
+ * but keeps looking for a stable window so the user can recover by standing still.
  */
 export function createRepDetector(): RepDetector {
-    let state: RepDetectorState = 'start';
+    let state: RepDetectorState = 'calibrating';
     let repNumber = 0;
     let baseline: number | null = null;
     let startPeak: Sample | null = null;
@@ -78,6 +97,8 @@ export function createRepDetector(): RepDetector {
     let holdPeak: Sample | null = null;
     let ascentPeak: Sample | null = null;
     let pending: PendingRep | null = null;
+    let calibrationStartedAt: number | null = null;
+    let calibrationSamples: Sample[] = [];
 
     function isStanding(value: number): boolean {
         return baseline !== null && value >= baseline - STANDING_TOLERANCE_DEG;
@@ -86,11 +107,51 @@ export function createRepDetector(): RepDetector {
     function returnToStart(peak: Sample | null, timestampMs: number): void {
         state = 'start';
         startPeak = peak;
-        baseline = peak?.value ?? null;
         lastStandingAt = timestampMs;
         holdStart = null;
         holdPeak = null;
         reversalStart = null;
+    }
+
+    function updateCalibrating(sample: Sample): void {
+        calibrationStartedAt ??= sample.timestampMs;
+
+        if (state === 'calibrating' && sample.timestampMs - calibrationStartedAt > CALIBRATION_TIMEOUT_MS) {
+            state = 'calibration_failed';
+        }
+
+        calibrationSamples.push(sample);
+
+        // Keep one anchor sample at or before the window start so the window can span the full duration.
+        const windowStart = sample.timestampMs - CALIBRATION_MIN_MS;
+        while (calibrationSamples.length > 1 && calibrationSamples[1].timestampMs <= windowStart) {
+            calibrationSamples.shift();
+        }
+
+        if (
+            calibrationSamples.length < CALIBRATION_MIN_SAMPLES ||
+            sample.timestampMs - calibrationSamples[0].timestampMs < CALIBRATION_MIN_MS
+        ) {
+            return;
+        }
+
+        const sorted = calibrationSamples.map((calibrationSample) => calibrationSample.value).sort((a, b) => a - b);
+        const median = percentile(sorted, 0.5);
+
+        // The 10th–90th percentile spread ignores single-frame landmark spikes; the median floor rejects a held squat.
+        if (
+            percentile(sorted, 0.9) - percentile(sorted, 0.1) > CALIBRATION_STABILITY_DEG ||
+            median < CALIBRATION_MIN_EXTENSION_DEG
+        ) {
+            return;
+        }
+
+        baseline = median;
+        startPeak = sample;
+        lastStandingAt = sample.timestampMs;
+        state = 'start';
+        calibrationSamples = [];
+        calibrationStartedAt = null;
     }
 
     function beginDescent(sample: Sample): void {
@@ -164,13 +225,12 @@ export function createRepDetector(): RepDetector {
             }
         }
 
-        if (value < MIN_STANDING_DEG) {
-            return settled ?? flushPending();
+        if (baseline === null) {
+            return settled;
         }
 
-        if (baseline === null || value >= baseline - STANDING_TOLERANCE_DEG) {
+        if (isStanding(value)) {
             startPeak = higher(startPeak, sample);
-            baseline = Math.max(baseline ?? value, value);
         }
 
         if (value >= baseline - MOVEMENT_DEG) {
@@ -258,6 +318,12 @@ export function createRepDetector(): RepDetector {
 
         const sample: Sample = { angles: repAngles, points, value: extension(repAngles), timestampMs };
 
+        if (state === 'calibrating' || state === 'calibration_failed') {
+            updateCalibrating(sample);
+
+            return null;
+        }
+
         if (state === 'start') {
             return updateStart(sample);
         }
@@ -272,12 +338,29 @@ export function createRepDetector(): RepDetector {
     }
 
     function reset(): void {
-        returnToStart(null, 0);
+        state = 'calibrating';
         repNumber = 0;
+        baseline = null;
+        startPeak = null;
+        lastStandingAt = 0;
+        leftStartAt = 0;
         bottom = null;
+        reversalStart = null;
+        holdStart = null;
+        holdPeak = null;
         ascentPeak = null;
         pending = null;
+        calibrationStartedAt = null;
+        calibrationSamples = [];
     }
 
-    return { update, reset, getState: () => state, getCompletedReps: () => repNumber, flush: flushPending };
+    return {
+        update,
+        reset,
+        getState: () => state,
+        getCompletedReps: () => repNumber,
+        getBaseline: () => baseline,
+        isReady: () => state !== 'calibrating' && state !== 'calibration_failed',
+        flush: flushPending,
+    };
 }

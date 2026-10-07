@@ -1,15 +1,59 @@
 import { Head, Link } from '@inertiajs/react';
 import { ChevronLeft } from 'lucide-react';
 import { useCallback, useEffect, useRef } from 'react';
+import PreflightChecklist from '@/components/coaching/preflight-checklist';
 import RepFeedbackPanel from '@/components/coaching/rep-feedback-panel';
-import WebcamView, { WebcamControls } from '@/components/coaching/webcam-view';
+import WebcamView, { type CalibrationOverlayState, WebcamControls } from '@/components/coaching/webcam-view';
 import { usePoseLandmarker } from '@/hooks/use-pose-landmarker';
 import { useRepCounter } from '@/hooks/use-rep-counter';
 import { useRepFeedback } from '@/hooks/use-rep-feedback';
 import AppLayout from '@/layouts/app-layout';
 import { exercises } from '@/routes';
 import type { BreadcrumbItem } from '@/types';
-import type { ExerciseReference, FrameSize, Point3D } from '@/types/coaching';
+import type { ExerciseReference, FrameSize, Point3D, PreflightStatus, RepDetectorState } from '@/types/coaching';
+
+/**
+ * Motion detection is ready once the detector has a fixed standing baseline. Calibration only runs on live frames,
+ * so before the camera or video starts it stays pending.
+ */
+function counterPreflight(
+    isPoseLoading: boolean,
+    isRunning: boolean,
+    repState: RepDetectorState,
+): { status: PreflightStatus; hint?: string } {
+    if (isPoseLoading) {
+        return { status: 'pending', hint: 'Načítáme pose model…' };
+    }
+
+    if (repState === 'calibration_failed') {
+        return {
+            status: 'error',
+            hint: 'Nedaří se zachytit stabilní stoj. Stůj chvíli klidně a vzpřímeně.',
+        };
+    }
+
+    if (repState === 'calibrating') {
+        return isRunning
+            ? {
+                  status: 'pending',
+                  hint: 'Postav se vzpřímeně, kalibrujeme postoj.',
+              }
+            : {
+                  status: 'pending',
+                  hint: 'Kalibrace proběhne po spuštění kamery nebo videa.',
+              };
+    }
+
+    return { status: 'ready' };
+}
+
+function calibrationOverlay(repState: RepDetectorState): CalibrationOverlayState {
+    if (repState === 'calibrating') {
+        return 'calibrating';
+    }
+
+    return repState === 'calibration_failed' ? 'failed' : 'idle';
+}
 
 type Exercise = {
     id: number;
@@ -40,6 +84,9 @@ export default function ExerciseShow({
         lastFeedback: repFeedback,
         isLoading: repFeedbackLoading,
         error: repFeedbackError,
+        isReady: feedbackReady,
+        readyError: feedbackReadyError,
+        retryReady: retryFeedbackReady,
         processLandmarks: processRepLandmarks,
         flush: flushRepFeedback,
         reset: resetRepFeedback,
@@ -79,6 +126,12 @@ export default function ExerciseShow({
         }
     }, [isRunning, flushRepFeedback]);
 
+    const handleStart = () => {
+        resetCount();
+        resetRepFeedback();
+        start();
+    };
+
     const handleStartWithFile = (file: File) => {
         resetCount();
         resetRepFeedback();
@@ -90,6 +143,10 @@ export default function ExerciseShow({
         resetCount();
         resetRepFeedback();
     };
+
+    const counterStatus = counterPreflight(isLoading, isRunning, repState);
+    const feedbackStatus: PreflightStatus = feedbackReadyError !== null ? 'error' : feedbackReady ? 'ready' : 'pending';
+    const canStart = !supportsRepFeedback || feedbackReady;
 
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Exercises', href: exercises().url },
@@ -130,6 +187,9 @@ export default function ExerciseShow({
                         isVideoFile={isVideoFile}
                         isGif={isGif}
                         mediaAspectRatio={mediaAspectRatio}
+                        calibrationState={
+                            supportsRepFeedback && isRunning && !isVideoFile ? calibrationOverlay(repState) : 'idle'
+                        }
                         className="h-[55dvh] min-h-80 lg:h-[calc(100dvh-14rem)]"
                     />
 
@@ -144,6 +204,25 @@ export default function ExerciseShow({
                                 )}
                                 <p className="text-sm text-muted-foreground">Stand side-on with your whole body in frame.</p>
                             </section>
+
+                            {supportsRepFeedback && (
+                                <div className="border-t border-border pt-6">
+                                    <PreflightChecklist
+                                        items={[
+                                            {
+                                                label: 'Detekce pohybu',
+                                                ...counterStatus,
+                                            },
+                                            {
+                                                label: 'AI zpětná vazba',
+                                                status: feedbackStatus,
+                                                hint: feedbackReadyError ?? undefined,
+                                                onRetry: retryFeedbackReady,
+                                            },
+                                        ]}
+                                    />
+                                </div>
+                            )}
 
                             {supportsRepFeedback && (
                                 <div className="border-t border-border pt-6">
@@ -177,7 +256,8 @@ export default function ExerciseShow({
                             isRunning={isRunning}
                             isVideoFile={isVideoFile}
                             error={poseError}
-                            onStart={start}
+                            canStart={canStart}
+                            onStart={handleStart}
                             onStartWithFile={handleStartWithFile}
                             onStop={handleStop}
                         />
