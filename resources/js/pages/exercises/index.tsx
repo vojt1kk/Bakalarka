@@ -2,12 +2,11 @@ import { Head, Link } from '@inertiajs/react';
 import { Dumbbell, Search, ArrowRight } from 'lucide-react';
 import { useState } from 'react';
 import ExerciseShowController from '@/actions/App/Http/Controllers/ExerciseShowController';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import AppLayout from '@/layouts/app-layout';
+import { cn } from '@/lib/utils';
 import { exercises } from '@/routes';
 import type { BreadcrumbItem } from '@/types';
 
@@ -18,24 +17,6 @@ type Exercise = {
     ppl_type: string | null;
     ul_type: string | null;
     muscle_types: string[];
-};
-
-const PPL_COLORS: Record<string, string> = {
-    Push: 'border-l-emerald-500',
-    Pull: 'border-l-sky-500',
-    Legs: 'border-l-amber-500',
-};
-
-const PPL_BADGE_COLORS: Record<string, string> = {
-    Push: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
-    Pull: 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20',
-    Legs: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
-};
-
-const PPL_AVATAR_COLORS: Record<string, string> = {
-    Push: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
-    Pull: 'bg-sky-500/15 text-sky-600 dark:text-sky-400',
-    Legs: 'bg-amber-500/15 text-amber-600 dark:text-amber-400',
 };
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -65,17 +46,21 @@ export default function ExercisesIndex({ exercises: exerciseList }: { exercises:
 
                 {/* Filter Bar */}
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex items-center gap-2 overflow-x-auto flex-nowrap">
+                    <div className="inline-flex w-fit items-center gap-1 overflow-x-auto rounded-full bg-muted p-1">
                         {FILTERS.map((filter) => (
-                            <Button
+                            <button
                                 key={filter}
-                                variant={activeFilter === filter ? 'default' : 'outline'}
-                                size="sm"
-                                className={activeFilter === filter ? 'font-medium' : 'text-muted-foreground'}
+                                type="button"
                                 onClick={() => setActiveFilter(filter)}
+                                className={cn(
+                                    'rounded-full px-4 py-1.5 text-sm font-medium transition-colors',
+                                    activeFilter === filter
+                                        ? 'bg-card text-foreground shadow-sm'
+                                        : 'text-muted-foreground hover:text-foreground',
+                                )}
                             >
                                 {filter}
-                            </Button>
+                            </button>
                         ))}
                     </div>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -91,74 +76,32 @@ export default function ExercisesIndex({ exercises: exerciseList }: { exercises:
                 {/* Exercise Grid */}
                 {filteredExercises.length > 0 ? (
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                        {filteredExercises.map((exercise) => {
-                            const borderColor =
-                                exercise.ppl_type && PPL_COLORS[exercise.ppl_type]
-                                    ? PPL_COLORS[exercise.ppl_type]
-                                    : 'border-l-primary';
-                            const avatarColor =
-                                exercise.ppl_type && PPL_AVATAR_COLORS[exercise.ppl_type]
-                                    ? PPL_AVATAR_COLORS[exercise.ppl_type]
-                                    : 'bg-primary/15 text-primary';
-
-                            return (
-                                <Link
-                                    key={exercise.id}
-                                    href={ExerciseShowController.url(exercise.id)}
-                                    className="group block rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                                >
-                                    <Card
-                                        className={`h-full border-l-4 ${borderColor}`}
-                                    >
-                                        <CardHeader className="pb-3">
-                                            <div className="flex items-start gap-3">
-                                                <Avatar className="h-10 w-10 shrink-0 rounded-lg">
-                                                    <AvatarFallback
-                                                        className={`rounded-lg text-sm font-bold ${avatarColor}`}
-                                                    >
-                                                        {exercise.name.charAt(0).toUpperCase()}
-                                                    </AvatarFallback>
-                                                </Avatar>
-                                                <div className="flex min-w-0 flex-col gap-1">
-                                                    <CardTitle className="text-base font-semibold leading-tight text-foreground transition-colors duration-200 group-hover:text-primary">
-                                                        {exercise.name}
-                                                    </CardTitle>
-                                                    <CardDescription className="line-clamp-2 text-sm leading-relaxed">
-                                                        {exercise.description}
-                                                    </CardDescription>
-                                                </div>
-                                            </div>
-                                        </CardHeader>
-                                        <CardContent className="pt-0">
-                                            <div className="flex flex-wrap gap-1.5">
-                                                {exercise.ppl_type && (
-                                                    <Badge
-                                                        variant="outline"
-                                                        className={`text-xs font-medium ${PPL_BADGE_COLORS[exercise.ppl_type] ?? ''}`}
-                                                    >
-                                                        {exercise.ppl_type}
-                                                    </Badge>
-                                                )}
-                                                {exercise.ul_type && (
-                                                    <Badge variant="outline" className="text-xs font-medium">
-                                                        {exercise.ul_type}
-                                                    </Badge>
-                                                )}
-                                                {exercise.muscle_types.map((muscle) => (
-                                                    <Badge key={muscle} variant="secondary" className="text-xs">
-                                                        {muscle}
-                                                    </Badge>
-                                                ))}
-                                            </div>
-                                            <div className="mt-3 flex items-center gap-1 text-xs font-medium text-muted-foreground">
-                                                <span>View exercise</span>
-                                                <ArrowRight className="h-3 w-3" />
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                </Link>
-                            );
-                        })}
+                        {filteredExercises.map((exercise) => (
+                            <Link
+                                key={exercise.id}
+                                href={ExerciseShowController.url(exercise.id)}
+                                className="group block rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                            >
+                                <Card className="h-full border-border/60 transition-colors group-hover:border-primary/40 group-hover:bg-card/80">
+                                    <CardHeader className="pb-3">
+                                        <CardTitle className="text-base font-semibold leading-tight text-foreground transition-colors group-hover:text-primary">
+                                            {exercise.name}
+                                        </CardTitle>
+                                        <CardDescription className="text-sm leading-relaxed text-muted-foreground">
+                                            {[exercise.ppl_type, exercise.ul_type, exercise.muscle_types.join(', ')]
+                                                .filter(Boolean)
+                                                .join(' · ')}
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="pt-0">
+                                        <div className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
+                                            <span>View exercise</span>
+                                            <ArrowRight className="h-3 w-3" />
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </Link>
+                        ))}
                     </div>
                 ) : (
                     <Card className="border-dashed">

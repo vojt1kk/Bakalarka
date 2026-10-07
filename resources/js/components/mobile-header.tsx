@@ -23,7 +23,7 @@ export function MobileHeader() {
                 className="flex items-center gap-2"
             >
                 <div className="flex h-8 w-8 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground">
-                    <AppLogoIcon className="size-5 fill-current text-white dark:text-black" />
+                    <AppLogoIcon className="size-5 fill-current" />
                 </div>
                 <span className="text-sm font-semibold">Fitrack</span>
             </Link>
@@ -36,7 +36,7 @@ export function MobileHeader() {
                                 src={auth.user.avatar}
                                 alt={auth.user.name}
                             />
-                            <AvatarFallback className="bg-neutral-200 text-black dark:bg-neutral-700 dark:text-white">
+                            <AvatarFallback className="bg-muted text-muted-foreground">
                                 {getInitials(auth.user.name)}
                             </AvatarFallback>
                         </Avatar>

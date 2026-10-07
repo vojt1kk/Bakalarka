@@ -1,10 +1,8 @@
-import { Head } from '@inertiajs/react';
-import { Play, BookOpen, Camera } from 'lucide-react';
+import { Head, Link } from '@inertiajs/react';
+import { ChevronLeft } from 'lucide-react';
 import { useCallback, useEffect, useRef } from 'react';
 import RepFeedbackPanel from '@/components/coaching/rep-feedback-panel';
-import WebcamView from '@/components/coaching/webcam-view';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import WebcamView, { WebcamControls } from '@/components/coaching/webcam-view';
 import { usePoseLandmarker } from '@/hooks/use-pose-landmarker';
 import { useRepCounter } from '@/hooks/use-rep-counter';
 import { useRepFeedback } from '@/hooks/use-rep-feedback';
@@ -102,125 +100,88 @@ export default function ExerciseShow({
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={exercise.name} />
 
-            <div className="flex flex-col gap-4 p-4 pb-8">
-                {/* Exercise Header */}
-                <section className="flex flex-col gap-3">
-                    <div className="flex flex-wrap items-center gap-2">
-                        {exercise.ppl_type && (
-                            <Badge variant="outline" className="border-primary/30 bg-primary/10 font-medium text-primary">
-                                {exercise.ppl_type}
-                            </Badge>
-                        )}
-                        {exercise.ul_type && (
-                            <Badge variant="outline" className="font-medium">
-                                {exercise.ul_type}
-                            </Badge>
-                        )}
-                        {exercise.muscle_types.map((muscle) => (
-                            <Badge key={muscle} variant="secondary" className="text-xs">
-                                {muscle}
-                            </Badge>
-                        ))}
-                    </div>
-                    <h1 className="text-3xl font-bold tracking-tight text-foreground text-balance sm:text-4xl">
-                        {exercise.name}
-                    </h1>
-                    <p className="max-w-2xl text-base leading-relaxed text-muted-foreground">{exercise.description}</p>
-                </section>
+            <div className="flex flex-col gap-4 p-4">
+                <header className="flex h-10 items-center gap-3">
+                    <Link
+                        href={exercises()}
+                        prefetch
+                        aria-label="Back to exercises"
+                        className="flex size-10 shrink-0 items-center justify-center rounded-full border border-border bg-card text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                    >
+                        <ChevronLeft className="size-4" />
+                    </Link>
+                    <h1 className="shrink-0 text-2xl font-bold tracking-tight text-foreground">{exercise.name}</h1>
+                    {exercise.muscle_types.length > 0 && (
+                        <p className="line-clamp-2 text-sm leading-tight text-muted-foreground first-letter:uppercase">
+                            {exercise.muscle_types.join(', ')}
+                        </p>
+                    )}
+                </header>
 
-                {/* Main grid: camera left, info right on desktop */}
-                <div className="grid gap-4 lg:grid-cols-[3fr_2fr] lg:items-start">
-                    {/* Camera column */}
-                    <Card className="overflow-hidden border-primary/20 bg-card">
-                        <CardHeader className="border-b border-border bg-primary/5 pb-4">
-                            <div className="flex items-center gap-2">
-                                <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10">
-                                    <Camera className="h-3.5 w-3.5 text-primary" />
+                <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_24rem]">
+                    <WebcamView
+                        videoRef={videoRef}
+                        canvasRef={canvasRef}
+                        gifCanvasRef={gifCanvasRef}
+                        landmarks={landmarks}
+                        deviations={deviations}
+                        isLoading={isLoading}
+                        isRunning={isRunning}
+                        isVideoFile={isVideoFile}
+                        isGif={isGif}
+                        mediaAspectRatio={mediaAspectRatio}
+                        className="h-[55dvh] min-h-80 lg:h-[calc(100dvh-14rem)]"
+                    />
+
+                    <aside className="flex flex-col gap-6 rounded-2xl border border-border bg-card p-6 lg:h-[calc(100dvh-14rem)] lg:min-h-80">
+                        <div className="flex flex-1 flex-col gap-6 lg:overflow-y-auto">
+                            <section className="flex flex-col gap-3">
+                                <h2 className="text-lg font-semibold text-foreground">Before you start</h2>
+                                {exercise.instructions && (
+                                    <p className="text-sm leading-relaxed whitespace-pre-line text-foreground/85">
+                                        {exercise.instructions}
+                                    </p>
+                                )}
+                                <p className="text-sm text-muted-foreground">Stand side-on with your whole body in frame.</p>
+                            </section>
+
+                            {supportsRepFeedback && (
+                                <div className="border-t border-border pt-6">
+                                    <RepFeedbackPanel
+                                        feedback={repFeedback}
+                                        isLoading={repFeedbackLoading}
+                                        repCount={detectedRepCount}
+                                        state={repState}
+                                        error={repFeedbackError}
+                                    />
                                 </div>
-                                <div className="flex flex-col gap-0.5">
-                                    <CardTitle className="text-base font-semibold">Workout Mode</CardTitle>
-                                    <CardDescription className="text-xs">AI-powered form analysis</CardDescription>
-                                </div>
-                            </div>
-                        </CardHeader>
-                        <CardContent className="p-4">
-                            <WebcamView
-                                videoRef={videoRef}
-                                canvasRef={canvasRef}
-                                gifCanvasRef={gifCanvasRef}
-                                landmarks={landmarks}
-                                deviations={deviations}
-                                isLoading={isLoading}
-                                isRunning={isRunning}
-                                isVideoFile={isVideoFile}
-                                isGif={isGif}
-                                mediaAspectRatio={mediaAspectRatio}
-                                error={poseError}
-                                onStart={start}
-                                onStartWithFile={handleStartWithFile}
-                                onStop={handleStop}
-                            />
-                        </CardContent>
-                    </Card>
+                            )}
 
-                    {/* Info column: feedback + video + instructions */}
-                    <div className="flex flex-col gap-4">
-                        {supportsRepFeedback && (
-                            <RepFeedbackPanel
-                                feedback={repFeedback}
-                                isLoading={repFeedbackLoading}
-                                repCount={detectedRepCount}
-                                state={repState}
-                                error={repFeedbackError}
-                            />
-                        )}
+                            {exercise.video_path && (
+                                <section className="flex flex-col gap-3 border-t border-border pt-6">
+                                    <h3 className="text-base font-semibold text-foreground">Reference video</h3>
+                                    <div className="aspect-video overflow-hidden rounded-xl bg-stage">
+                                        <video
+                                            src={exercise.video_path}
+                                            controls
+                                            className="h-full w-full object-cover"
+                                            preload="metadata"
+                                        />
+                                    </div>
+                                </section>
+                            )}
+                        </div>
 
-                        {exercise.video_path && (
-                            <Card className="overflow-hidden">
-                                <CardHeader className="pb-3">
-                                    <div className="flex items-center gap-2">
-                                        <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10">
-                                            <Play className="h-3.5 w-3.5 text-primary" />
-                                        </div>
-                                        <CardTitle className="text-base font-semibold">Reference Video</CardTitle>
-                                    </div>
-                                    <CardDescription>Watch the proper form before starting.</CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="overflow-hidden rounded-lg border border-border bg-muted/30">
-                                        <div className="aspect-video">
-                                            <video
-                                                src={exercise.video_path}
-                                                controls
-                                                className="h-full w-full object-cover"
-                                                preload="metadata"
-                                            />
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        )}
-
-                        {exercise.instructions && (
-                            <Card>
-                                <CardHeader className="pb-3">
-                                    <div className="flex items-center gap-2">
-                                        <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10">
-                                            <BookOpen className="h-3.5 w-3.5 text-primary" />
-                                        </div>
-                                        <CardTitle className="text-base font-semibold">Instructions</CardTitle>
-                                    </div>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="rounded-lg border-l-2 border-primary/30 bg-muted/30 px-5 py-4">
-                                        <p className="whitespace-pre-line text-sm leading-relaxed text-foreground">
-                                            {exercise.instructions}
-                                        </p>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        )}
-                    </div>
+                        <WebcamControls
+                            isLoading={isLoading}
+                            isRunning={isRunning}
+                            isVideoFile={isVideoFile}
+                            error={poseError}
+                            onStart={start}
+                            onStartWithFile={handleStartWithFile}
+                            onStop={handleStop}
+                        />
+                    </aside>
                 </div>
             </div>
         </AppLayout>

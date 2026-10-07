@@ -1,8 +1,7 @@
-import { CameraIcon, CameraOffIcon, VideoIcon } from 'lucide-react';
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import PoseOverlay from '@/components/coaching/pose-overlay';
-import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
+import { cn } from '@/lib/utils';
 import type { JointDeviation, Point3D } from '@/types';
 
 export const VIDEO_WIDTH = 640;
@@ -18,10 +17,7 @@ export default function WebcamView({
     isVideoFile,
     isGif,
     mediaAspectRatio,
-    error,
-    onStart,
-    onStartWithFile,
-    onStop,
+    className,
 }: {
     videoRef: React.RefObject<HTMLVideoElement | null>;
     canvasRef: React.RefObject<HTMLCanvasElement | null>;
@@ -33,31 +29,20 @@ export default function WebcamView({
     isVideoFile: boolean;
     isGif: boolean;
     mediaAspectRatio: number;
-    error: string | null;
-    onStart: () => void;
-    onStartWithFile: (file: File) => void;
-    onStop: () => void;
+    className?: string;
 }) {
-    const fileInputRef = useRef<HTMLInputElement | null>(null);
-
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            onStartWithFile(file);
-        }
-        e.target.value = '';
-    };
-
     return (
-        <div className="flex flex-col gap-4">
+        <div
+            className={cn('relative flex items-center justify-center overflow-hidden rounded-2xl bg-stage', className)}
+            style={{ containerType: 'size' }}
+        >
+            {/* Largest box with the media aspect ratio that fits the stage, so the pose overlay stays aligned with the video. */}
             <div
-                className="bg-muted relative mx-auto w-full max-w-[min(20rem,var(--media-max-w))] overflow-hidden rounded-lg sm:max-w-(--media-max-w)"
-                style={
-                    {
-                        aspectRatio: mediaAspectRatio,
-                        '--media-max-w': `calc(70vh * ${mediaAspectRatio})`,
-                    } as React.CSSProperties
-                }
+                className="relative"
+                style={{
+                    aspectRatio: mediaAspectRatio,
+                    width: `min(100cqw, calc(100cqh * ${mediaAspectRatio}))`,
+                }}
             >
                 <video
                     ref={videoRef}
@@ -76,66 +61,133 @@ export default function WebcamView({
                     canvasRef={canvasRef}
                     isMirrored={!isVideoFile}
                 />
-
-                {!isRunning && !isLoading && (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                        <p className="text-muted-foreground text-sm">Camera is off</p>
-                    </div>
-                )}
-
-                {isLoading && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                        <div className="flex items-center gap-2 text-white">
-                            <Spinner className="size-5" />
-                            <span className="text-sm">Loading pose model...</span>
-                        </div>
-                    </div>
-                )}
             </div>
 
+            {!isRunning && !isLoading && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 text-center">
+                    <p className="text-sm font-medium text-foreground">Camera is off</p>
+                    <p className="text-xs text-muted-foreground">Stand side-on, whole body in frame</p>
+                </div>
+            )}
+
+            {isLoading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                    <div className="flex items-center gap-2 text-white">
+                        <Spinner className="size-5" />
+                        <span className="text-sm">Loading pose model...</span>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
+function Kbd({ children }: { children: string }) {
+    return (
+        <kbd className="inline-flex size-6 items-center justify-center rounded-md bg-current/15 font-sans text-xs font-medium">
+            {children}
+        </kbd>
+    );
+}
+
+function isTypingTarget(target: EventTarget | null): boolean {
+    return (
+        target instanceof HTMLElement &&
+        (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))
+    );
+}
+
+export function WebcamControls({
+    isLoading,
+    isRunning,
+    isVideoFile,
+    error,
+    onStart,
+    onStartWithFile,
+    onStop,
+}: {
+    isLoading: boolean;
+    isRunning: boolean;
+    isVideoFile: boolean;
+    error: string | null;
+    onStart: () => void;
+    onStartWithFile: (file: File) => void;
+    onStop: () => void;
+}) {
+    const fileInputRef = useRef<HTMLInputElement | null>(null);
+    const isCameraRunning = isRunning && !isVideoFile;
+    const isFileRunning = isRunning && isVideoFile;
+
+    const toggleCamera = isCameraRunning ? onStop : onStart;
+    const toggleFile = isFileRunning ? onStop : () => fileInputRef.current?.click();
+
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (isLoading || event.repeat || event.metaKey || event.ctrlKey || event.altKey || isTypingTarget(event.target)) {
+                return;
+            }
+            const key = event.key.toLowerCase();
+            if (key === 'c') {
+                (isCameraRunning ? onStop : onStart)();
+            } else if (key === 'v') {
+                if (isFileRunning) {
+                    onStop();
+                } else {
+                    fileInputRef.current?.click();
+                }
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [isLoading, isCameraRunning, isFileRunning, onStart, onStop]);
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            onStartWithFile(file);
+        }
+        e.target.value = '';
+    };
+
+    return (
+        <div className="flex flex-col gap-2">
             {error && <p className="text-sm text-destructive">{error}</p>}
 
             <input ref={fileInputRef} type="file" accept="video/*,image/gif" className="hidden" onChange={handleFileChange} />
 
-            <div className="flex gap-2">
-                <Button
-                    className="flex-1"
-                    onClick={isRunning ? onStop : onStart}
-                    disabled={isLoading}
-                    variant={isRunning && !isVideoFile ? 'destructive' : 'default'}
-                >
-                    {isRunning && !isVideoFile ? (
-                        <>
-                            <CameraOffIcon />
-                            Stop Camera
-                        </>
-                    ) : (
-                        <>
-                            <CameraIcon />
-                            Start Camera
-                        </>
-                    )}
-                </Button>
+            <button
+                type="button"
+                onClick={toggleCamera}
+                disabled={isLoading}
+                aria-keyshortcuts="C"
+                className={cn(
+                    'inline-flex h-11 items-center justify-center gap-3 rounded-full text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50',
+                    isCameraRunning
+                        ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90'
+                        : 'bg-foreground text-background hover:bg-foreground/90',
+                )}
+            >
+                {isCameraRunning ? 'Stop camera' : 'Start camera'}
+                <Kbd>C</Kbd>
+            </button>
 
-                <Button
-                    className="flex-1"
-                    onClick={isRunning && isVideoFile ? onStop : () => fileInputRef.current?.click()}
-                    disabled={isLoading}
-                    variant={isRunning && isVideoFile ? 'destructive' : 'outline'}
-                >
-                    {isRunning && isVideoFile ? (
-                        <>
-                            <CameraOffIcon />
-                            Stop Video
-                        </>
-                    ) : (
-                        <>
-                            <VideoIcon />
-                            Load Video / GIF
-                        </>
-                    )}
-                </Button>
-            </div>
+            <button
+                type="button"
+                onClick={toggleFile}
+                disabled={isLoading}
+                aria-keyshortcuts="V"
+                className={cn(
+                    'inline-flex h-11 items-center justify-center gap-3 rounded-full border text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50',
+                    isFileRunning
+                        ? 'border-destructive text-destructive hover:bg-destructive/10'
+                        : 'border-border text-foreground hover:bg-muted',
+                )}
+            >
+                {isFileRunning ? 'Stop video' : 'Upload video'}
+                <Kbd>V</Kbd>
+            </button>
         </div>
     );
 }

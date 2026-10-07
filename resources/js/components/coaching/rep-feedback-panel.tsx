@@ -1,6 +1,5 @@
 import { CircleCheck, TriangleAlert } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
 import type { RepDetectorState, RepFeedback, RepSectionFeedback } from '@/types';
 
@@ -19,7 +18,7 @@ function SectionRow({ title, section }: { title: string; section: RepSectionFeed
         <div className="flex items-start gap-3">
             <Icon
                 aria-hidden="true"
-                className={`mt-0.5 size-5 shrink-0 ${isOk ? 'text-green-600 dark:text-green-500' : 'text-amber-600 dark:text-amber-500'}`}
+                className={`mt-0.5 size-5 shrink-0 ${isOk ? 'text-primary' : 'text-amber-400'}`}
             />
             <div className="min-w-0 space-y-0.5">
                 <h4 className="text-sm font-medium">
@@ -46,45 +45,34 @@ export default function RepFeedbackPanel({
     error: string | null;
 }) {
     return (
-        <div className="flex flex-col gap-4">
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex flex-wrap items-center justify-between gap-2">
-                        <span>Cvičení</span>
-                        <div className="flex gap-2">
-                            <Badge variant="outline">{STATE_LABELS[state]}</Badge>
-                            <Badge>{repCount} opak.</Badge>
-                        </div>
-                    </CardTitle>
-                </CardHeader>
-            </Card>
+        <section className="flex flex-col gap-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+                <h3 className="flex items-center gap-2 text-base font-semibold">
+                    Zpětná vazba
+                    {isLoading && <Spinner />}
+                </h3>
+                <div className="flex gap-2">
+                    <Badge variant="outline">{STATE_LABELS[state]}</Badge>
+                    <Badge>{repCount} opak.</Badge>
+                </div>
+            </div>
 
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        Zpětná vazba k opakování
-                        {isLoading && <Spinner />}
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    {error && <p className="text-sm text-destructive">{error}</p>}
+            {error && <p className="text-sm text-destructive">{error}</p>}
 
-                    {!feedback && !isLoading && !error && (
-                        <p className="text-sm text-muted-foreground">
-                            Proveď první opakování a po jeho dokončení se zde zobrazí hodnocení.
-                        </p>
-                    )}
+            {!feedback && !isLoading && !error && (
+                <p className="text-sm text-muted-foreground">
+                    Proveď první opakování a po jeho dokončení se zde zobrazí hodnocení.
+                </p>
+            )}
 
-                    {feedback && (
-                        <div className="space-y-4">
-                            <SectionRow title="Výchozí pozice" section={feedback.startPosition} />
-                            <SectionRow title="Bod obratu" section={feedback.bottomPosition} />
-                            <SectionRow title="Tempo" section={feedback.tempo} />
-                            <p className="text-sm text-muted-foreground italic">{feedback.encouragement}</p>
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
-        </div>
+            {feedback && (
+                <div className="space-y-4">
+                    <SectionRow title="Výchozí pozice" section={feedback.startPosition} />
+                    <SectionRow title="Bod obratu" section={feedback.bottomPosition} />
+                    <SectionRow title="Tempo" section={feedback.tempo} />
+                    <p className="text-sm text-muted-foreground italic">{feedback.encouragement}</p>
+                </div>
+            )}
+        </section>
     );
 }
