@@ -1,5 +1,5 @@
 import { FilesetResolver, PoseLandmarker, DrawingUtils } from '@mediapipe/tasks-vision';
-import type { NormalizedLandmark } from '@mediapipe/tasks-vision';
+import type { Landmark, NormalizedLandmark } from '@mediapipe/tasks-vision';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { FrameSize, Point3D } from '@/types';
 
@@ -20,12 +20,17 @@ export type UsePoseLandmarkerReturn = {
     drawingUtils: DrawingUtils | null;
 };
 
-export type PoseFrameHandler = (landmarks: Point3D[], mediaTimestampMs: number, frame: FrameSize) => void;
+export type PoseFrameHandler = (
+    landmarks: Point3D[],
+    worldLandmarks: Point3D[],
+    mediaTimestampMs: number,
+    frame: FrameSize,
+) => void;
 
 const DEFAULT_GIF_FRAME_MS = 100;
 const CAMERA_ASPECT_RATIO = 640 / 480;
 
-function toPoints(poseLandmarks: NormalizedLandmark[]): Point3D[] {
+function toPoints(poseLandmarks: Array<NormalizedLandmark | Landmark>): Point3D[] {
     return poseLandmarks.map((lm) => ({
         x: lm.x,
         y: lm.y,
@@ -75,16 +80,19 @@ export function usePoseLandmarker(
         const detectionTs = Math.max(performance.now(), lastDetectionTsRef.current + 1);
         lastDetectionTsRef.current = detectionTs;
 
-        const poseLandmarks = landmarker.detectForVideo(source, detectionTs).landmarks[0];
+        const result = landmarker.detectForVideo(source, detectionTs);
+        const poseLandmarks = result.landmarks[0];
+        const poseWorldLandmarks = result.worldLandmarks[0];
 
-        if (poseLandmarks) {
+        if (poseLandmarks && poseWorldLandmarks) {
             const points = toPoints(poseLandmarks);
+            const worldPoints = toPoints(poseWorldLandmarks);
             setLandmarks(points);
             const frame: FrameSize =
                 source instanceof HTMLVideoElement
                     ? { width: source.videoWidth, height: source.videoHeight }
                     : { width: source.width, height: source.height };
-            onFrameRef.current?.(points, mediaTimestampMs, frame);
+            onFrameRef.current?.(points, worldPoints, mediaTimestampMs, frame);
         } else {
             setLandmarks(null);
         }

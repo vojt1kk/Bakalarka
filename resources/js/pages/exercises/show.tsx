@@ -93,12 +93,13 @@ export default function ExerciseShow({
     } = useRepFeedback(exercise.id, referenceAngles);
 
     const handlePoseFrame = useCallback(
-        (frameLandmarks: Point3D[], mediaTimestampMs: number, frame: FrameSize) => {
+        (frameLandmarks: Point3D[], frameWorldLandmarks: Point3D[], mediaTimestampMs: number, frame: FrameSize) => {
+            processLandmarks(frameWorldLandmarks);
             if (supportsRepFeedback) {
-                processRepLandmarks(frameLandmarks, mediaTimestampMs, frame);
+                processRepLandmarks(frameLandmarks, frameWorldLandmarks, mediaTimestampMs, frame);
             }
         },
-        [supportsRepFeedback, processRepLandmarks],
+        [processLandmarks, supportsRepFeedback, processRepLandmarks],
     );
 
     const {
@@ -113,12 +114,6 @@ export default function ExerciseShow({
         startWithFile,
         stop,
     } = usePoseLandmarker(videoRef, canvasRef, gifCanvasRef, handlePoseFrame);
-
-    useEffect(() => {
-        if (landmarks) {
-            processLandmarks(landmarks);
-        }
-    }, [landmarks, processLandmarks]);
 
     useEffect(() => {
         if (!isRunning) {

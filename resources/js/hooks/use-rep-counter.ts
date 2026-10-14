@@ -8,7 +8,7 @@ export type UseRepCounterReturn = {
     jointAngles: JointAngles;
     deviations: JointDeviation[];
     resetCount: () => void;
-    processLandmarks: (landmarks: Point3D[]) => void;
+    processLandmarks: (worldLandmarks: Point3D[]) => void;
 };
 
 export function useRepCounter(reference: ExerciseReference): UseRepCounterReturn {
@@ -22,8 +22,8 @@ export function useRepCounter(reference: ExerciseReference): UseRepCounterReturn
     const phaseNames = useMemo(() => Object.keys(reference.phases), [reference.phases]);
 
     const processLandmarks = useCallback(
-        (landmarks: Point3D[]) => {
-            const angles = extractJointAngles(landmarks);
+        (worldLandmarks: Point3D[]) => {
+            const angles = extractJointAngles(worldLandmarks);
             setJointAngles(angles);
 
             const phase = detectPhase(angles, reference.phases);

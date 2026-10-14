@@ -21,6 +21,8 @@ const Landmark = {
 
 /**
  * Calculate the angle (in degrees) at point B formed by segments BA and BC.
+ * Works in any isotropic coordinate space: image pixels, MediaPipe world coordinates,
+ * or any other where (x, y, z) use the same unit.
  */
 export function calculateAngle(a: Point3D, b: Point3D, c: Point3D): number {
     const ba = { x: a.x - b.x, y: a.y - b.y, z: a.z - b.z };
@@ -68,10 +70,6 @@ const referenceKeyMap: Record<string, [string, string]> = {
     ankle: ['left_ankle', 'right_ankle'],
 };
 
-/**
- * Extract named joint angles from 33 MediaPipe pose landmarks.
- * Returns both individual (left/right) and averaged angles for reference matching.
- */
 const keyPointLandmarks: Record<string, number> = {
     left_shoulder: Landmark.LeftShoulder,
     right_shoulder: Landmark.RightShoulder,
@@ -88,7 +86,9 @@ function round3(value: number): number {
 }
 
 /**
- * Pick the joints sent to the AI as [x, y, z, visibility] in MediaPipe's normalized coordinates.
+ * Pick the joints sent to the AI as [x, y, z, visibility] in MediaPipe's NORMALIZED IMAGE coordinates.
+ * These stay in image space (not world space) because the Gemini prompt documents them as
+ * "normalized to the frame size" and uses them as visual context around the measured angles.
  */
 export function extractKeyPoints(landmarks: Point3D[]): KeyPoints {
     const points: KeyPoints = {};
@@ -103,12 +103,12 @@ export function extractKeyPoints(landmarks: Point3D[]): KeyPoints {
     return points;
 }
 
-export function extractJointAngles(landmarks: Point3D[]): JointAngles {
+export function extractJointAngles(worldLandmarks: Point3D[]): JointAngles {
     const angles: JointAngles = {};
 
     for (const [joint, [a, b, c]] of Object.entries(jointDefinitions)) {
-        if (landmarks[a] && landmarks[b] && landmarks[c]) {
-            angles[joint] = Math.round(calculateAngle(landmarks[a], landmarks[b], landmarks[c]) * 10) / 10;
+        if (worldLandmarks[a] && worldLandmarks[b] && worldLandmarks[c]) {
+            angles[joint] = Math.round(calculateAngle(worldLandmarks[a], worldLandmarks[b], worldLandmarks[c]) * 10) / 10;
         }
     }
 

@@ -12,7 +12,7 @@ export type UseRepFeedbackReturn = {
     isReady: boolean;
     readyError: string | null;
     retryReady: () => void;
-    processLandmarks: (landmarks: Point3D[], timestampMs: number, frame: FrameSize) => void;
+    processLandmarks: (landmarks: Point3D[], worldLandmarks: Point3D[], timestampMs: number, frame: FrameSize) => void;
     flush: () => void;
     reset: () => void;
 };
@@ -126,13 +126,17 @@ export function useRepFeedback(exerciseId: number, reference: ExerciseReference)
     );
 
     const processLandmarks = useCallback(
-        (landmarks: Point3D[], timestampMs: number, frame: FrameSize) => {
+        (landmarks: Point3D[], worldLandmarks: Point3D[], timestampMs: number, frame: FrameSize) => {
             if (detector === null || !isReady) {
                 return;
             }
 
             frameSizeRef.current = frame;
-            const summary = detector.update(extractJointAngles(landmarks), timestampMs, extractKeyPoints(landmarks));
+            const summary = detector.update(
+                extractJointAngles(worldLandmarks),
+                timestampMs,
+                extractKeyPoints(landmarks),
+            );
             setState(detector.getState());
             setRepCount(detector.getCompletedReps());
 
